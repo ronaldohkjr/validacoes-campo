@@ -6,6 +6,8 @@
 <style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style>
 </head>
 <body>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.js"></script>
+<script src="config.js"></script>
 <title>Validações de Campo</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -330,6 +332,17 @@ details.fold[open] > summary { margin-bottom: 10px; }
 .toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(18px + env(safe-area-inset-bottom, 0px)); background: var(--ink); color: var(--bg); padding: 8px 14px; border-radius: 6px; font-size: 13px; z-index: 20; max-width: calc(100% - 32px); }
 .saving { font-size: 12px; color: var(--muted); }
 
+/* Login (own site) */
+.auth { min-height: 100%; display: flex; align-items: center; justify-content: center; padding-block: 32px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.auth-card { width: 100%; max-width: 380px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 24px; display: flex; flex-direction: column; gap: 12px; }
+.auth-card h1 { font-family: var(--f-display); font-weight: 700; font-size: 28px; text-transform: uppercase; letter-spacing: .02em; margin: 0; line-height: 1; }
+.auth-card p { margin: 0; color: var(--muted); font-size: 13px; }
+.auth-card label { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--muted); }
+.auth-card .err { color: var(--fail); font-size: 13px; min-height: 1em; }
+.auth-card .btn { justify-content: center; padding: 9px 12px; }
+.usermenu { display: flex; gap: 10px 16px; flex-wrap: wrap; align-items: flex-end; }
+.usermenu label { display: flex; flex-direction: column; gap: 3px; font-size: 12px; color: var(--muted); flex: 1 1 200px; }
+
 @media (max-width: 900px) {
   .strip { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .stat:nth-child(4) { border-left: 0; }
@@ -367,8 +380,10 @@ details.fold[open] > summary { margin-bottom: 10px; }
       <button data-action="view" data-v="agenda" aria-pressed="false">Agenda<span id="agenda-badge"></span></button>
     </div>
     <span class="saving" id="saving"></span>
+    <button class="btn sm ghost" id="userchip" data-action="user-menu" hidden></button>
     <button class="btn primary" data-action="new">+ Novo projeto</button>
   </header>
+  <div class="box usermenu" id="usermenu" hidden></div>
   <div class="banner" id="banner" hidden></div>
   <section class="strip" id="strip" aria-label="Resumo"></section>
   <div class="main" id="main">
@@ -403,6 +418,7 @@ details.fold[open] > summary { margin-bottom: 10px; }
   </div>
   <main class="panel" id="agenda" hidden></main>
 </div>
+<div class="auth" id="auth" hidden></div>
 <div class="toast" id="toast" hidden></div>
 
 <script>
@@ -675,7 +691,7 @@ details.fold[open] > summary { margin-bottom: 10px; }
       .then(op)
       .catch((e) => {
         const code = e && e.code;
-        if (code === "invalid_argument" && state.canWrite === true) toast("Este projeto foi excluído por outra pessoa.");
+        if (code === "not_found" || (code === "invalid_argument" && state.canWrite === true)) toast("Este projeto foi excluído por outra pessoa.");
         else if (code === "invalid_argument") { setReadOnly(true); toast("Você não tem permissão para editar."); }
         else toast(code === "quota_exceeded" ? "Armazenamento cheio: apague projetos antigos." : "Não foi possível salvar. Verifique a conexão e tente de novo.");
       })
@@ -1166,6 +1182,10 @@ details.fold[open] > summary { margin-bottom: 10px; }
     const a = b.dataset.action;
     if (state.readOnly && WRITE_ACTIONS.has(a)) return;
 
+    if (a === "user-menu") { toggleUserMenu(); return; }
+    if (a === "um-name") { saveMyName(); return; }
+    if (a === "um-pass") { saveMyPassword(); return; }
+    if (a === "um-logout") { if (sbClient) sbClient.auth.signOut().finally(() => location.reload()); return; }
     if (a === "view") { state.view = b.dataset.v; renderView(); return; }
     if (a === "agenda-tipo") { state.agendaTipo = b.dataset.v; renderAgenda(); return; }
     if (a === "open") { selectProject(b.dataset.id, "proximo"); return; }
@@ -1377,7 +1397,130 @@ details.fold[open] > summary { margin-bottom: 10px; }
     const bn = $("#banner"); bn.textContent = msg; bn.hidden = false;
     store.subscribe(onSnapshot);
   }
+  /* ---------- Own site: Supabase database + e-mail/password login ---------- */
+  let sbClient = null;
+  let myName = "";
+  const isUuid = (v) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v || "");
+
+  function supaStore(sb, uid) {
+    let cb = null, timer = null;
+    const mapErr = (e) => ({ code: e && e.code === "42501" ? "invalid_argument" : "unavailable", message: (e && e.message) || "" });
+    async function fetchAll() {
+      const { data, error } = await sb.from("projects").select("id,data");
+      if (error) { toast("Não foi possível carregar os projetos. Verifique a conexão."); return; }
+      cb && cb((data || []).map((r) => ({ id: r.id, data: r.data || {} })));
+    }
+    const refresh = () => { clearTimeout(timer); timer = setTimeout(fetchAll, 250); };
+    return {
+      subscribe(f) {
+        cb = f; fetchAll();
+        sb.channel("projects-changes").on("postgres_changes", { event: "*", schema: "public", table: "projects" }, refresh).subscribe();
+        document.addEventListener("visibilitychange", () => { if (!document.hidden) refresh(); });
+        setInterval(refresh, 60000);
+        return () => {};
+      },
+      async set(id, data) { const { error } = await sb.from("projects").upsert({ id, data, updated_by: uid, updated_at: new Date().toISOString() }); if (error) throw mapErr(error); },
+      async update(id, patch) {
+        const { data, error } = await sb.rpc("merge_project", { p_id: id, p_patch: patch });
+        if (error) throw mapErr(error);
+        if (data === false) throw { code: "not_found" };
+      },
+      async del(id) { const { error } = await sb.from("projects").delete().eq("id", id); if (error) throw mapErr(error); },
+      newId() { return (window.crypto && crypto.randomUUID ? crypto.randomUUID().replace(/-/g, "").slice(0, 20) : rid()); },
+    };
+  }
+  function supaUserApi(sb, uid) {
+    const cache = {};
+    return {
+      id: async () => uid,
+      can: async () => true,
+      async profiles(ids) {
+        const want = Array.from(new Set(ids)).filter((x) => isUuid(x) && !(x in cache));
+        if (want.length) {
+          const { data } = await sb.from("profiles").select("id,nome").in("id", want);
+          (data || []).forEach((r) => { cache[r.id] = r.nome || ""; });
+          want.forEach((x) => { if (!(x in cache)) cache[x] = ""; });
+        }
+        const out = {};
+        ids.forEach((x) => { out[x] = { id: x, name: cache[x] || "", isMe: x === uid }; });
+        return out;
+      },
+    };
+  }
+
+  function renderLogin(msg) {
+    $("#app").hidden = true;
+    const a = $("#auth"); a.hidden = false;
+    a.innerHTML = `<form class="auth-card" id="login-form" novalidate>
+      <h1>Validações de Campo</h1>
+      <p>Entre com o e-mail e a senha que o responsável cadastrou para você.</p>
+      <label for="lg-email">E-mail<input class="field-in" id="lg-email" type="email" autocomplete="username" required></label>
+      <label for="lg-pass">Senha<input class="field-in" id="lg-pass" type="password" autocomplete="current-password" required></label>
+      <div class="err" id="lg-err">${esc(msg || "")}</div>
+      <button class="btn primary" type="submit" id="lg-btn">Entrar</button>
+      <p>Esqueceu a senha? Fale com o responsável pelo app.</p>
+    </form>`;
+    setTimeout(() => { const e = $("#lg-email"); e && e.focus(); }, 0);
+  }
+  document.addEventListener("submit", async (ev) => {
+    if (ev.target.id !== "login-form") return;
+    ev.preventDefault();
+    const email = $("#lg-email").value.trim(), password = $("#lg-pass").value;
+    if (!email || !password) { $("#lg-err").textContent = "Preencha e-mail e senha."; return; }
+    $("#lg-btn").disabled = true; $("#lg-err").textContent = "";
+    const { error } = await sbClient.auth.signInWithPassword({ email, password });
+    if (error) { $("#lg-btn").disabled = false; $("#lg-err").textContent = /invalid/i.test(error.message) ? "E-mail ou senha incorretos." : "Não foi possível entrar. Verifique a conexão e tente de novo."; return; }
+    location.reload();
+  });
+
+  function toggleUserMenu() {
+    const m = $("#usermenu");
+    if (!m.hidden) { m.hidden = true; return; }
+    m.innerHTML = `<label for="um-nome">Seu nome (aparece nos registros)<input class="field-in" id="um-nome" value="${esc(myName)}"></label>
+      <button class="btn" data-action="um-name">Salvar nome</button>
+      <label for="um-senha">Nova senha (mínimo 8 caracteres)<input class="field-in" id="um-senha" type="password" autocomplete="new-password"></label>
+      <button class="btn" data-action="um-pass">Trocar senha</button>
+      <button class="btn ghost danger" data-action="um-logout">Sair</button>`;
+    m.hidden = false;
+  }
+  async function saveMyName() {
+    const nome = ($("#um-nome").value || "").trim(); if (!nome) return;
+    const { error } = await sbClient.from("profiles").update({ nome }).eq("id", state.myId);
+    if (error) { toast("Não foi possível salvar o nome."); return; }
+    myName = nome; $("#userchip").textContent = nome + " ▾"; toast("Nome salvo."); renderDetail();
+  }
+  async function saveMyPassword() {
+    const pw = $("#um-senha").value || "";
+    if (pw.length < 8) { toast("A senha precisa ter pelo menos 8 caracteres."); return; }
+    const { error } = await sbClient.auth.updateUser({ password: pw });
+    if (error) { toast("Não foi possível trocar a senha."); return; }
+    $("#um-senha").value = ""; toast("Senha alterada.");
+  }
+
+  async function bootSupabase(cfg) {
+    if (!window.supabase || !window.supabase.createClient) {
+      renderLogin("Não foi possível carregar o app. Verifique a internet e recarregue a página.");
+      $("#lg-btn").disabled = true;
+      return;
+    }
+    sbClient = window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseKey);
+    const { data } = await sbClient.auth.getSession();
+    const session = data && data.session;
+    if (!session) { renderLogin(); return; }
+    const uid = session.user.id;
+    state.myId = uid; state.canWrite = true;
+    userApi = supaUserApi(sbClient, uid);
+    const { data: prof } = await sbClient.from("profiles").select("nome").eq("id", uid).maybeSingle();
+    myName = (prof && prof.nome) || (session.user.email || "").split("@")[0];
+    const chip = $("#userchip"); chip.textContent = myName + " ▾"; chip.hidden = false;
+    sbClient.auth.onAuthStateChange((ev) => { if (ev === "SIGNED_OUT") location.reload(); });
+    store = supaStore(sbClient, uid);
+    store.subscribe(onSnapshot);
+  }
+
   (async function boot() {
+    const cfg = window.APP_CONFIG;
+    if (!(window.claude && window.claude.use) && cfg && cfg.supabaseUrl && cfg.supabaseKey) { bootSupabase(cfg); return; }
     let db = null;
     try { db = window.claude && window.claude.use ? await window.claude.use("db") : null; } catch (e) { db = null; }
     if (!db) { useLocal("Modo local: os dados ficam salvos só neste navegador. Abra o app pelo claude.ai com sua conta para salvar na nuvem."); return; }

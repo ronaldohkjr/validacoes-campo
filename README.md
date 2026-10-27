@@ -7,9 +7,11 @@ App para o supervisor de validação de campo controlar a jornada do cliente e o
 
 ## Acessar a plataforma
 
-**https://claude.ai/artifact/Dm7zbat1JVLh5LCTWKqFov**
+**https://ronaldohkjr.github.io/validacoes-campo/**
 
-Entre com sua conta do claude.ai. Para ver ou editar, a pessoa precisa ter sido convidada pelo responsável (botão Compartilhar na página).
+Entre com o e-mail e a senha que o responsável cadastrou para você. Não precisa de conta no Claude.
+
+Para configurar o site e cadastrar pessoas, veja [docs/CONFIGURAR.md](docs/CONFIGURAR.md).
 
 ## O que o app faz
 
@@ -33,7 +35,7 @@ O app é um único arquivo HTML:
 
 ## Estrutura dos dados
 
-Cada projeto é um documento na coleção `projects`, com os campos do tipo de projeto, mais:
+Cada projeto é uma linha da tabela `projects` (campo `data`, JSON) no Supabase, ou um documento da coleção `projects` no claude.ai, com os campos do tipo de projeto, mais:
 
 - `etapa`, `etapasHist[]`, `etapasPend[]`: etapa atual, histórico de mudanças e etapas que ficaram pendentes
 - `proximo`: `{texto, tipo: "contato" | "visita" | "tarefa", prazo, criado, autor}` ou `null`
