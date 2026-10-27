@@ -11,7 +11,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
 <style>
-/* Layout: field-terminal console — summary strip on top, project list left, project sheet right (journey → next steps → history → checklist → data); agenda view lists every open task; stacks on phones */
+/* Layout: field-terminal console — summary strip on top, project list left, project sheet right (journey, then tabs: next step / history / checklist / data); agenda lists each project's single next step; stacks on phones */
 :root {
   --bg: #edf0ea;
   --surface: #f9fbf7;
@@ -174,7 +174,7 @@ fieldset.fs { border: 0; padding: 0; margin: 0; min-width: 0; display: flex; fle
 /* Journey stepper */
 .journey { overflow-x: auto; padding: 4px 2px 6px; }
 .steps { display: flex; min-width: max-content; list-style: none; margin: 0; padding: 0; }
-.step { flex: 1 0 108px; }
+.step { flex: 1 0 96px; }
 .step button { width: 100%; border: 0; background: transparent; display: flex; flex-direction: column; align-items: flex-start; gap: 6px; padding: 0 8px 0 0; text-align: left; color: var(--muted); font-size: 12.5px; line-height: 1.25; }
 .step .node { width: 100%; display: flex; align-items: center; }
 .step .dotn { width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--line); background: var(--surface); flex: none; }
@@ -190,31 +190,52 @@ fieldset.fs { border: 0; padding: 0; margin: 0; min-width: 0; display: flex; fle
 .since { font-size: 12.5px; color: var(--muted); }
 .suggest { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; background: var(--info-soft); border-radius: 6px; padding: 8px 12px; font-size: 13px; }
 
-/* Tasks */
-.tasks { display: flex; flex-direction: column; }
-.task { display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; gap: 2px 10px; align-items: center; padding: 8px 0; border-top: 1px dashed var(--line); }
-.task:first-child { border-top: 0; }
-.task input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--accent); margin: 0; }
-.task .tx { min-width: 0; overflow-wrap: anywhere; }
-.task.done .tx { text-decoration: line-through; color: var(--muted); }
-.task .due { font-size: 12.5px; border: 1px solid transparent; background: transparent; padding: 2px 4px; border-radius: 4px; width: 132px; font-family: var(--f-mono); }
-.task .due:hover { border-color: var(--line); }
-.task .due.late { color: var(--fail); font-weight: 600; }
-.task .due.today { color: var(--pend); font-weight: 600; }
-.task .proj { grid-column: 2 / -1; font-size: 12px; color: var(--muted); display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
-.link { border: 0; background: none; color: var(--accent); padding: 0; text-decoration: underline; text-underline-offset: 2px; font-size: inherit; }
+/* Detail tabs */
+.dtabs { display: flex; gap: 2px; border-bottom: 1px solid var(--line); overflow-x: auto; margin-bottom: -12px; }
+.dtabs button { border: 0; background: transparent; padding: 8px 12px 9px; font-family: var(--f-display); font-size: 16px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); border-bottom: 3px solid transparent; margin-bottom: -1px; white-space: nowrap; display: inline-flex; align-items: center; gap: 6px; }
+.dtabs button:hover { color: var(--ink); }
+.dtabs button[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--accent); }
+.dtabs .cnt { font-family: var(--f-mono); font-size: 11px; font-weight: 500; letter-spacing: 0; background: var(--na-soft); color: var(--muted); border-radius: 9px; padding: 0 6px; line-height: 17px; }
+.dtabs .cnt.late { background: var(--fail); color: var(--raised); }
+.dtabs .cnt.today { background: var(--pend); color: var(--raised); }
+.dtabs .cnt.warn { background: var(--pend-soft); color: var(--pend); }
+
+/* Next step */
+.next-card { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 14px 18px; border: 1px solid var(--line); border-left: 4px solid var(--accent); background: var(--raised); border-radius: 8px; padding: 16px; }
+.next-card.late { border-left-color: var(--fail); }
+.next-card.today { border-left-color: var(--pend); }
+.nc-when { display: flex; flex-direction: column; min-width: 92px; }
+.nc-when .big { font-family: var(--f-display); font-size: 34px; font-weight: 600; line-height: 1; font-variant-numeric: tabular-nums; }
+.nc-when .rel { font-size: 12.5px; color: var(--muted); }
+.next-card.late .big, .next-card.late .rel { color: var(--fail); }
+.next-card.today .big, .next-card.today .rel { color: var(--pend); }
+.nc-body { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.nc-body strong { font-size: 16px; overflow-wrap: anywhere; }
+.nc-meta { font-size: 12.5px; color: var(--muted); }
+.nc-actions { grid-column: 1 / -1; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; border-top: 1px dashed var(--line); padding-top: 12px; }
+.nc-actions label { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--muted); }
+.nc-actions input[type="date"] { width: auto; }
+.box { border: 1px solid var(--line); border-radius: 8px; background: var(--raised); padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+.box h3 { margin: 0; font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); font-weight: 600; }
+.box .row-end { display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; }
+.sched { display: flex; flex-direction: column; gap: 8px; }
+.sched.off .sched-what { opacity: .4; pointer-events: none; }
+.quick { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; font-size: 12.5px; color: var(--muted); }
+.quick input[type="date"] { width: auto; }
+.chip[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.hint { color: var(--muted); font-size: 12.5px; margin: 0; }
+.last { font-size: 13px; color: var(--muted); display: flex; gap: 8px; flex-wrap: wrap; }
+.last b { color: var(--ink); font-weight: 500; }
+.suggest { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; background: var(--info-soft); border-radius: 6px; padding: 8px 12px; font-size: 13px; }
 .tag { display: inline-block; font-size: 10.5px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; padding: 1px 6px; border-radius: 4px; margin-right: 6px; vertical-align: 1px; }
 .tag.contato, .tag.ligacao { background: var(--info-soft); color: var(--info); }
 .tag.visita { background: var(--accent-soft); color: var(--accent); }
 .tag.mensagem { background: var(--na-soft); color: var(--na); }
-.tag.teste { background: var(--pend-soft); color: var(--pend); }
+.tag.teste, .tag.tarefa { background: var(--pend-soft); color: var(--pend); }
 .tag.nota { background: var(--na-soft); color: var(--muted); }
 .tag.etapa { background: transparent; color: var(--accent); border: 1px solid var(--accent); }
 .tag.feito { background: transparent; color: var(--ok); border: 1px solid var(--ok); }
-.quick { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; font-size: 12.5px; color: var(--muted); }
-.task-add { display: grid; grid-template-columns: minmax(0, 1fr) 150px 170px auto; gap: 8px; }
-.done-toggle { align-self: flex-start; }
-
+.link { border: 0; background: none; color: var(--accent); padding: 0; text-decoration: underline; text-underline-offset: 2px; font-size: inherit; }
 /* Diary */
 .log { display: flex; flex-direction: column; }
 .entry { display: grid; grid-template-columns: 92px minmax(0, 1fr) auto; gap: 10px; padding: 9px 0; border-top: 1px dashed var(--line); }
@@ -281,8 +302,18 @@ details.fold[open] > summary { margin-bottom: 10px; }
 .placeholder { padding: 48px 24px; text-align: center; color: var(--muted); display: flex; flex-direction: column; gap: 8px; align-items: center; }
 .placeholder strong { color: var(--ink); font-family: var(--f-display); font-size: 22px; font-weight: 600; }
 
-.app.ro [data-action="new"], .app.ro .add-row, .app.ro .log-add, .app.ro .task-add, .app.ro .quick, .app.ro .suggest,
-.app.ro [data-action="ck-del"], .app.ro [data-action="log-del"], .app.ro [data-action="task-del"], .app.ro [data-action="del-ask"], .app.ro [data-action="ck-template"] { display: none; }
+.app.ro [data-action="new"], .app.ro .add-row, .app.ro .log-add, .app.ro .box, .app.ro .nc-actions, .app.ro .suggest,
+.app.ro [data-action="ck-del"], .app.ro [data-action="log-del"], .app.ro [data-action="del-ask"], .app.ro [data-action="ck-template"], .app.ro [data-action="agenda-sched"] { display: none; }
+
+/* Agenda rows */
+.arow { display: grid; grid-template-columns: 96px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 9px 0; border-top: 1px dashed var(--line); }
+.bucket .arow:first-of-type { border-top: 0; }
+.arow .ad { font-family: var(--f-mono); font-size: 13px; }
+.arow .ad small { display: block; font-family: var(--f-body); font-size: 11.5px; color: var(--muted); font-weight: 400; }
+.arow .ad.late { color: var(--fail); font-weight: 600; }
+.arow .ad.today { color: var(--pend); font-weight: 600; }
+.arow .at { min-width: 0; overflow-wrap: anywhere; }
+.arow .sub { font-size: 12.5px; color: var(--muted); }
 
 .toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(18px + env(safe-area-inset-bottom, 0px)); background: var(--ink); color: var(--bg); padding: 8px 14px; border-radius: 6px; font-size: 13px; z-index: 20; max-width: calc(100% - 32px); }
 .saving { font-size: 12px; color: var(--muted); }
@@ -296,8 +327,6 @@ details.fold[open] > summary { margin-bottom: 10px; }
   .app.show-detail .list-panel, .app.show-detail .strip { display: none; }
   .app:not(.show-detail) .detail-panel { display: none; }
   .back { display: inline-flex; }
-  .task-add { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
-  .task-add input[type="text"] { grid-column: 1 / -1; }
   .log-add { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
   .log-add textarea { grid-column: 1 / -1; }
 }
@@ -309,9 +338,9 @@ details.fold[open] > summary { margin-bottom: 10px; }
   .ck .tri { grid-column: 1 / 2; justify-self: start; }
   .entry { grid-template-columns: minmax(0, 1fr) auto; }
   .entry .what { grid-column: 1 / -1; grid-row: 2; }
-  .task { grid-template-columns: auto minmax(0, 1fr) auto; }
-  .task .due { grid-column: 2; grid-row: 2; justify-self: start; padding-left: 0; }
-  .task .proj { grid-row: 3; }
+  .next-card { grid-template-columns: minmax(0, 1fr); }
+  .arow { grid-template-columns: minmax(0, 1fr) auto; }
+  .arow .ad { grid-column: 1 / -1; }
   .d-ctrl select { min-width: 0; }
   .d-ctrl label { flex: 1 1 140px; }
 }
@@ -405,6 +434,15 @@ details.fold[open] > summary { margin-bottom: 10px; }
   };
   const FOLLOWUP_STAGES = new Set(["acompanhamento", "liberado"]);
 
+  const NEXT_TIPOS = [
+    { v: "contato", l: "Entrar em contato" },
+    { v: "visita", l: "Visita" },
+    { v: "tarefa", l: "Outra tarefa" },
+  ];
+  const NEXT_LABEL = { contato: "Contato", visita: "Visita", tarefa: "Tarefa" };
+  const NEXT_TO_LOG = { contato: "ligacao", visita: "visita", tarefa: "nota" };
+  const DAY_CHIPS = [7, 15, 30, 60, 90];
+
   const LOG_TIPOS = [
     { v: "visita", l: "Visita" },
     { v: "ligacao", l: "Ligação" },
@@ -476,7 +514,7 @@ details.fold[open] > summary { margin-bottom: 10px; }
   const addDays = (n) => { const d = new Date(); d.setDate(d.getDate() + n); return isoOf(d); };
   const fmtDate = (iso) => { if (!iso) return ""; const [y, m, d] = iso.split("-"); return d && m ? `${d}/${m}/${y.slice(2)}` : iso; };
   const daysFrom = (iso) => { if (!iso) return null; const a = new Date(iso + "T00:00:00"); const b = new Date(todayISO() + "T00:00:00"); return Math.round((a - b) / 86400000); };
-  const relDay = (iso) => { const d = daysFrom(iso); if (d === null) return ""; if (d === 0) return "hoje"; if (d === 1) return "amanhã"; if (d === -1) return "ontem"; return d < 0 ? `há ${-d} dias` : `em ${d} dias`; };
+  const relDay = (iso) => { const d = daysFrom(iso); if (d === null) return ""; if (d === 0) return "hoje"; if (d === 1) return "amanhã"; if (d === -1) return "ontem"; return d < 0 ? `atrasado ${-d} dias` : `em ${d} dias`; };
   const statusLabel = (v) => (STATUS.find((s) => s.v === v) || STATUS[0]).l;
   const clone = (o) => (o === undefined ? "" : JSON.parse(JSON.stringify(o)));
   const fmtDateTime = (ts) => { try { return new Date(ts).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }); } catch (e) { return ""; } };
@@ -507,12 +545,17 @@ details.fold[open] > summary { margin-bottom: 10px; }
     const h = (p.etapasHist || []).filter((x) => x.etapa === k);
     return h.length ? h[h.length - 1].data : null;
   }
-  function openTasksOf(p) { return (p.tarefas || []).filter((t) => !t.feito).sort((a, b) => (a.prazo || "9999") < (b.prazo || "9999") ? -1 : 1); }
-  function nextTask(p) { return openTasksOf(p)[0] || null; }
+  const nextOf = (p) => (p.proximo && p.proximo.texto ? p.proximo : null);
   function dueClass(iso) { const d = daysFrom(iso); return d === null ? "" : d < 0 ? "late" : d === 0 ? "today" : ""; }
-  function retornoTexto(p) {
+  function defaultNextText(p, tipo) {
+    if (tipo === "visita") return `Visita em ${p.fazenda || p.cliente || "cliente"}`;
+    if (tipo === "tarefa") return "";
     if (p.tipo === "validacao") return `Cobrar retorno de ${p.engenharia || "engenharia"}${p.versaoSw ? " sobre a versão " + p.versaoSw : ""}`;
-    return `Ligar para ${p.contato || p.cliente || "o cliente"} e ver como está o equipamento`;
+    return `Entrar em contato com ${p.contato || p.cliente || "o cliente"} para ver como está`;
+  }
+  function lastEntry(p) {
+    const d = (p.diario || []).filter((e) => !e.auto).sort((a, b) => (a.data < b.data ? 1 : a.data > b.data ? -1 : 0));
+    return d[0] || null;
   }
 
   /* ---------- State ---------- */
@@ -521,12 +564,13 @@ details.fold[open] > summary { margin-bottom: 10px; }
     loaded: false,
     selectedId: null,
     view: "projetos",
+    tab: "proximo",
     agendaTipo: "todas",
     filter: { tipo: "todos", status: "ativos", q: "" },
     newTipo: "homologacao",
     confirmDelete: false,
+    completing: false,
     openNotes: new Set(),
-    showDone: false,
     logTipo: "visita",
     readOnly: false,
     canWrite: null,
@@ -608,7 +652,7 @@ details.fold[open] > summary { margin-bottom: 10px; }
     } else {
       const patch = { updated: p.updated };
       if (state.myId) patch.updatedBy = state.myId;
-      s.fields.forEach((k) => { patch[k] = clone(p[k]); });
+      s.fields.forEach((k) => { patch[k] = p[k] === null ? null : clone(p[k]); });
       op = () => store.update(id, patch);
     }
     s.isNew = false; s.fields = new Set();
@@ -638,7 +682,7 @@ details.fold[open] > summary { margin-bottom: 10px; }
     const seen = new Set();
     rows.forEach(({ id, data }) => {
       seen.add(id);
-      if (!busy(id)) state.projects.set(id, Object.assign({ checklist: [], diario: [], tarefas: [], etapasHist: [] }, clone(data)));
+      if (!busy(id)) state.projects.set(id, Object.assign({ checklist: [], diario: [], etapasHist: [], proximo: null }, clone(data)));
     });
     for (const id of Array.from(state.projects.keys())) if (!seen.has(id) && !busy(id)) state.projects.delete(id);
     state.loaded = true;
@@ -657,49 +701,33 @@ details.fold[open] > summary { margin-bottom: 10px; }
     p.diario = (p.diario || []).concat([{ id: rid(), data: todayISO(), tipo: "etapa", texto: "Etapa: " + st.l, autor: state.myId || "", auto: true }]);
     changed(id, ["etapa", "etapasHist", "diario"], { detail: true, now: true });
   }
-  function addTask(id, texto, prazo, tipo) {
-    const p = state.projects.get(id); if (!p) return;
-    p.tarefas = (p.tarefas || []).concat([{ id: rid(), texto, prazo: prazo || "", tipo: tipo || "tarefa", feito: false, autor: state.myId || "", criado: todayISO() }]);
-    changed(id, ["tarefas"], { detail: true, now: true });
-  }
-  function toggleTask(id, tid) {
-    const p = state.projects.get(id); if (!p) return null;
-    const t = (p.tarefas || []).find((x) => x.id === tid); if (!t) return null;
-    t.feito = !t.feito;
-    if (t.feito) {
-      t.feitoEm = todayISO();
-      const logId = rid();
-      t.logId = logId;
-      p.diario = (p.diario || []).concat([{ id: logId, data: todayISO(), tipo: "feito", texto: t.texto, autor: state.myId || "", auto: true }]);
-    } else {
-      p.diario = (p.diario || []).filter((e) => e.id !== t.logId);
-      t.logId = ""; t.feitoEm = "";
-    }
-    changed(id, ["tarefas", "diario"], { detail: true, now: true });
-    return t;
+  function readSched(prefix) {
+    const none = $("#" + prefix + "-none");
+    if (none && none.value === "1") return null;
+    const texto = ($("#" + prefix + "-texto").value || "").trim();
+    const tipo = $("#" + prefix + "-tipo").value || "contato";
+    const prazo = $("#" + prefix + "-prazo").value || "";
+    if (!texto) { $("#" + prefix + "-texto").focus(); toast("Escreva o que precisa ser feito."); return false; }
+    if (!prazo) { $("#" + prefix + "-prazo").focus(); toast("Escolha quando."); return false; }
+    return { id: rid(), texto, tipo, prazo, criado: todayISO(), autor: state.myId || "" };
   }
 
   /* ---------- Rendering ---------- */
-  function allOpenTasks() {
-    const out = [];
-    state.projects.forEach((p, id) => (p.tarefas || []).forEach((t) => { if (!t.feito) out.push({ t, p, id }); }));
-    return out.sort((a, b) => ((a.t.prazo || "9999") < (b.t.prazo || "9999") ? -1 : (a.t.prazo || "9999") > (b.t.prazo || "9999") ? 1 : 0));
-  }
+  function activeProjects() { return Array.from(state.projects.entries()).filter(([, p]) => !CLOSED.has(p.status) && stageKey(p) !== "encerrado"); }
 
   function renderSummary() {
-    const all = Array.from(state.projects.values());
-    const ativos = all.filter((p) => !CLOSED.has(p.status));
-    const tasks = allOpenTasks();
-    const late = tasks.filter((x) => { const d = daysFrom(x.t.prazo); return d !== null && d < 0; }).length;
-    const today = tasks.filter((x) => daysFrom(x.t.prazo) === 0).length;
-    const retornos = tasks.filter((x) => { const d = daysFrom(x.t.prazo); return x.t.tipo === "contato" && d !== null && d >= 0 && d <= 7; }).length;
-    const falhas = ativos.reduce((n, p) => n + counts(p).falha, 0);
+    const act = activeProjects();
+    const nexts = act.map(([, p]) => nextOf(p)).filter(Boolean);
+    const late = nexts.filter((n) => { const d = daysFrom(n.prazo); return d !== null && d < 0; }).length;
+    const today = nexts.filter((n) => daysFrom(n.prazo) === 0).length;
+    const week = nexts.filter((n) => { const d = daysFrom(n.prazo); return d !== null && d > 0 && d <= 7; }).length;
+    const sem = act.filter(([, p]) => !nextOf(p)).length;
     $("#strip").innerHTML = [
-      `<button class="stat" data-action="view" data-v="projetos"><span class="n">${ativos.length}</span><span class="l">Projetos ativos</span></button>`,
-      `<button class="stat ${late ? "bad" : ""}" data-action="view" data-v="agenda"><span class="n">${late}</span><span class="l">Tarefas atrasadas</span></button>`,
+      `<button class="stat" data-action="view" data-v="projetos"><span class="n">${act.length}</span><span class="l">Projetos ativos</span></button>`,
+      `<button class="stat ${late ? "bad" : ""}" data-action="view" data-v="agenda"><span class="n">${late}</span><span class="l">Atrasados</span></button>`,
       `<button class="stat ${today ? "warn" : ""}" data-action="view" data-v="agenda"><span class="n">${today}</span><span class="l">Para hoje</span></button>`,
-      `<button class="stat ${retornos ? "info" : ""}" data-action="agenda-retornos"><span class="n">${retornos}</span><span class="l">Retornos em 7 dias</span></button>`,
-      `<div class="stat ${falhas ? "bad" : ""}"><span class="n">${falhas}</span><span class="l">Itens com falha</span></div>`,
+      `<button class="stat ${week ? "info" : ""}" data-action="view" data-v="agenda"><span class="n">${week}</span><span class="l">Próximos 7 dias</span></button>`,
+      `<button class="stat ${sem ? "warn" : ""}" data-action="view" data-v="agenda"><span class="n">${sem}</span><span class="l">Sem próximo passo</span></button>`,
     ].join("");
     const badge = late + today;
     $("#agenda-badge").innerHTML = badge ? `<span class="badge">${badge}</span>` : "";
@@ -718,10 +746,10 @@ details.fold[open] > summary { margin-bottom: 10px; }
         return hay.includes(q);
       })
       .sort((a, b) => {
-        const na = nextTask(a), nb = nextTask(b);
-        const da = (na && na.prazo) || "9999", dbb = (nb && nb.prazo) || "9999";
         const ca = CLOSED.has(a.status) ? 1 : 0, cb = CLOSED.has(b.status) ? 1 : 0;
         if (ca !== cb) return ca - cb;
+        const na = nextOf(a), nb = nextOf(b);
+        const da = (na && na.prazo) || "9999", dbb = (nb && nb.prazo) || "9999";
         if (da !== dbb) return da < dbb ? -1 : 1;
         const r = (STATUS_RANK[a.status] ?? 9) - (STATUS_RANK[b.status] ?? 9);
         if (r) return r;
@@ -740,12 +768,13 @@ details.fold[open] > summary { margin-bottom: 10px; }
     if (!rows.length) { el.innerHTML = `<div class="empty">Nenhum projeto com esses filtros.</div>`; return; }
     el.innerHTML = rows.map((p) => {
       const c = counts(p);
-      const nt = nextTask(p);
+      const nt = nextOf(p);
       const si = stageIdx(p);
       const mini = stages(p).map((s, i) => `<i class="${i <= si ? "on" : ""}"></i>`).join("");
+      const closed = CLOSED.has(p.status) || stageKey(p) === "encerrado";
       const nx = nt
-        ? `<span class="nx">→ <b>${esc(nt.texto)}</b>${nt.prazo ? ` · <span class="mono ${dueClass(nt.prazo)}">${fmtDate(nt.prazo)}</span>` : ""}</span>`
-        : (CLOSED.has(p.status) ? "" : `<span class="nx">Nenhum próximo passo definido</span>`);
+        ? `<span class="nx">→ <b>${esc(nt.texto)}</b> · <span class="mono ${dueClass(nt.prazo)}">${fmtDate(nt.prazo)}</span></span>`
+        : (closed ? "" : `<span class="nx today">Sem próximo passo</span>`);
       const fails = c.falha ? `<span class="late">${c.falha} falha${c.falha > 1 ? "s" : ""}</span>` : "";
       return `<button class="item" data-action="select" data-id="${esc(p.id)}" aria-current="${p.id === state.selectedId}">
         <span class="kind ${p.tipo === "validacao" ? "val" : "hom"}">${KIND[p.tipo] ? KIND[p.tipo].short : "?"}</span>
@@ -758,60 +787,94 @@ details.fold[open] > summary { margin-bottom: 10px; }
     }).join("");
   }
 
-  function taskRow(t, pid, opts) {
-    const p = state.projects.get(pid);
-    const tag = t.tipo === "contato" ? `<span class="tag contato">Retorno</span>` : "";
-    const proj = opts && opts.showProject && p
-      ? `<span class="proj"><button class="link" data-action="open" data-id="${esc(pid)}">${esc(p.titulo || "Sem nome")}</button>${p.tipo === "homologacao" && p.contatoTel ? `<span class="mono">${esc(p.contatoTel)}</span>` : ""}</span>`
-      : (t.feito && t.feitoEm ? `<span class="proj">Concluída em ${fmtDate(t.feitoEm)}</span>` : "");
-    const due = opts && opts.showProject
-      ? `<span class="due ${t.feito ? "" : dueClass(t.prazo)}">${t.prazo ? fmtDate(t.prazo) + " · " + relDay(t.prazo) : "sem data"}</span>`
-      : `<input class="due ${t.feito ? "" : dueClass(t.prazo)}" type="date" value="${esc(t.prazo)}" data-task-date="${esc(t.id)}" aria-label="Prazo" ${state.readOnly ? "disabled" : ""}>`;
-    return `<div class="task ${t.feito ? "done" : ""}">
-      <input type="checkbox" ${t.feito ? "checked" : ""} data-action="task-toggle" data-id="${esc(pid)}" data-task="${esc(t.id)}" aria-label="Concluir tarefa" ${state.readOnly ? "disabled" : ""}>
-      <span class="tx">${tag}${esc(t.texto)}</span>
-      ${due}
-      ${opts && opts.showProject ? "" : `<button class="icon-btn" data-action="task-del" data-task="${esc(t.id)}" aria-label="Apagar tarefa">×</button>`}
-      ${proj}
+  function schedForm(prefix, p, opts) {
+    const tipo = (opts && opts.tipo) || "contato";
+    const days = 7;
+    return `<div class="sched" id="${prefix}-sched">
+      <input type="hidden" id="${prefix}-tipo" value="${tipo}">
+      <input type="hidden" id="${prefix}-none" value="0">
+      <div class="sched-what" style="display:flex;flex-direction:column;gap:8px">
+        <div class="seg" role="group" aria-label="Tipo de passo">${NEXT_TIPOS.map((t) => `<button type="button" data-action="sched-tipo" data-prefix="${prefix}" data-v="${t.v}" aria-pressed="${t.v === tipo}">${t.l}</button>`).join("")}</div>
+        <input class="field-in" id="${prefix}-texto" data-auto="1" value="${esc(defaultNextText(p, tipo))}" placeholder="O que precisa ser feito…" aria-label="O que fazer">
+      </div>
+      <div class="quick">Quando:
+        ${DAY_CHIPS.map((n) => `<button type="button" class="chip" data-action="sched-days" data-prefix="${prefix}" data-v="${n}" aria-pressed="${n === days}">${n} dias</button>`).join("")}
+        <input class="field-in mono" type="date" id="${prefix}-prazo" data-prefix="${prefix}" value="${addDays(days)}" aria-label="Data">
+        ${opts && opts.allowNone ? `<button type="button" class="chip" data-action="sched-none" data-prefix="${prefix}" aria-pressed="false">Sem próximo passo</button>` : ""}
+      </div>
     </div>`;
   }
 
-  function renderDetail() {
-    const el = $("#detail");
-    const id = state.selectedId;
-    const p = id && state.projects.get(id);
-    $("#app").classList.toggle("show-detail", !!p && state.view === "projetos");
-    if (!p) {
-      el.innerHTML = `<div class="placeholder"><strong>Selecione um projeto</strong>Escolha um projeto na lista para ver a jornada, os próximos passos e o histórico.</div>`;
-      return;
+  function tabProximo(p, id) {
+    const nt = nextOf(p);
+    const le = lastEntry(p);
+    const last = le ? `<div class="last">Último registro: <b>${fmtDate(le.data)}</b><span class="tag ${esc(le.tipo || "nota")}">${esc(LOG_LABEL[le.tipo || "nota"] || "Nota")}</span><span>${esc((le.texto || "").split("\n")[0])}</span><button class="link" data-action="tab" data-v="historico">ver histórico</button></div>` : "";
+    const tel = p.tipo === "homologacao" && (p.contato || p.contatoTel) ? [p.contato, p.contatoTel].filter(Boolean).join(" · ") : (p.tipo === "validacao" && p.engenharia ? p.engenharia : "");
+
+    if (nt && state.completing) {
+      return `<div class="box">
+        <h3>Como foi? — ${esc(nt.texto)}</h3>
+        <div class="row2">
+          <select class="field-in" id="cr-tipo" aria-label="Tipo de registro" style="flex:0 1 200px">${LOG_TIPOS.map((t) => `<option value="${t.v}" ${NEXT_TO_LOG[nt.tipo] === t.v ? "selected" : ""}>${t.l}</option>`).join("")}</select>
+          <span></span>
+        </div>
+        <textarea class="field-in" id="cr-text" rows="3" placeholder="O que foi feito, o que o cliente disse, problemas…" aria-label="Resultado"></textarea>
+        <h3>Qual o próximo passo?</h3>
+        ${schedForm("cp", p, { allowNone: true, tipo: "contato" })}
+        <div class="row-end"><button class="btn ghost" data-action="complete-cancel">Cancelar</button><button class="btn primary" data-action="complete-save">Salvar no histórico</button></div>
+      </div>${last}`;
     }
+    if (nt) {
+      const dc = dueClass(nt.prazo);
+      return `<div class="next-card ${dc}">
+        <div class="nc-when"><span class="big">${esc(fmtDate(nt.prazo).slice(0, 5))}</span><span class="rel">${esc(relDay(nt.prazo))}</span></div>
+        <div class="nc-body">
+          <div><span class="tag ${esc(nt.tipo)}">${esc(NEXT_LABEL[nt.tipo] || "Tarefa")}</span></div>
+          <strong>${esc(nt.texto)}</strong>
+          ${tel ? `<span class="nc-meta mono">${esc(tel)}</span>` : ""}
+          <span class="nc-meta">Agendado${nt.autor ? ` por <span data-uid="${esc(nt.autor)}">…</span>` : ""} em ${esc(fmtDate(nt.criado))}</span>
+        </div>
+        <div class="nc-actions">
+          <button class="btn primary" data-action="complete-start">Feito — registrar como foi</button>
+          <label for="next-date">Mudar data <input class="field-in mono" type="date" id="next-date" value="${esc(nt.prazo)}"></label>
+          <button class="btn ghost danger" data-action="next-drop">Remover</button>
+        </div>
+      </div>
+      <p class="hint">Um passo por vez: quando concluir, você anota como foi e já agenda o próximo.</p>
+      ${last}`;
+    }
+    const suggest = FOLLOWUP_STAGES.has(stageKey(p)) ? `<div class="suggest">Projeto em acompanhamento: agende o próximo contato para ver como o cliente está.</div>` : "";
+    return `${suggest}<div class="box">
+        <h3>Agendar próximo passo</h3>
+        ${schedForm("ns", p, { tipo: "contato" })}
+        <div class="row-end"><button class="btn primary" data-action="next-save">Agendar</button></div>
+      </div>
+      ${last}`;
+  }
+
+  function tabHistorico(p) {
+    const diario = (p.diario || []).slice().sort((a, b) => (a.data < b.data ? 1 : a.data > b.data ? -1 : 0));
+    const log = diario.length
+      ? diario.map((e) => {
+          const tipo = e.tipo || "nota";
+          return `<div class="entry ${e.auto ? "auto" : ""}"><span class="when">${esc(fmtDate(e.data))}${e.autor ? `<span class="by" data-uid="${esc(e.autor)}"></span>` : ""}</span>
+          <span class="what"><span class="tag ${esc(tipo)}">${esc(LOG_LABEL[tipo] || "Nota")}</span>${esc(e.texto)}</span>
+          ${e.auto ? "<span></span>" : `<button class="icon-btn" data-action="log-del" data-entry="${esc(e.id)}" aria-label="Apagar registro">×</button>`}</div>`;
+        }).join("")
+      : `<div class="entry"><span class="when">—</span><span class="what" style="color:var(--muted)">Nenhum registro ainda.</span><span></span></div>`;
+    return `<p class="hint">Tudo o que já foi feito, do mais recente para o mais antigo. Para registrar algo fora do próximo passo, use o campo abaixo.</p>
+      <div class="log-add">
+        <input class="field-in mono" id="log-date" type="date" value="${todayISO()}" aria-label="Data">
+        <select class="field-in" id="log-tipo" aria-label="Tipo de registro">${LOG_TIPOS.map((t) => `<option value="${t.v}" ${state.logTipo === t.v ? "selected" : ""}>${t.l}</option>`).join("")}</select>
+        <textarea class="field-in" id="log-text" placeholder="O que foi feito, o que o cliente disse, problemas…" aria-label="Registro"></textarea>
+        <button class="btn primary" data-action="log-add">Registrar</button>
+      </div>
+      <div class="log">${log}</div>`;
+  }
+
+  function tabChecklist(p) {
     const c = counts(p);
     const w = (n) => (c.total ? ((n / c.total) * 100).toFixed(1) : 0) + "%";
-    const pct = c.total ? Math.round(((c.ok + c.na) / c.total) * 100) : 0;
-
-    // Journey
-    const si = stageIdx(p);
-    const steps = stages(p).map((s, i) => {
-      const since = stageSince(p, s.k);
-      return `<li class="step ${i < si ? "done" : i === si ? "cur" : ""}"><button data-action="stage" data-v="${s.k}" ${i === si ? 'aria-current="step"' : ""} title="Mover para esta etapa">
-        <span class="node"><span class="dotn"></span><span class="ln"></span></span>${esc(s.l)}${since && i <= si ? `<span class="sd">${fmtDate(since)}</span>` : ""}</button></li>`;
-    }).join("");
-    const curSince = stageSince(p, stageKey(p));
-    const openT = openTasksOf(p);
-    const doneT = (p.tarefas || []).filter((t) => t.feito).sort((a, b) => (a.feitoEm < b.feitoEm ? 1 : -1));
-    const hasOpenContato = openT.some((t) => t.tipo === "contato");
-    const suggest = FOLLOWUP_STAGES.has(stageKey(p)) && !hasOpenContato
-      ? `<div class="suggest">Projeto em acompanhamento sem retorno agendado. <button class="btn sm primary" data-action="followups">Agendar retornos em 30, 60 e 90 dias</button></div>` : "";
-
-    // Data fields
-    const fields = (FIELDS[p.tipo] || []).map((f) => {
-      const v = p[f.k] == null ? "" : p[f.k];
-      const idf = "fd-" + f.k;
-      if (f.t === "area") return `<label class="wide" for="${idf}">${f.l}<textarea class="field-in" id="${idf}" data-field="${f.k}">${esc(v)}</textarea></label>`;
-      return `<label for="${idf}">${f.l}<input class="field-in ${f.mono ? "mono" : ""}" id="${idf}" data-field="${f.k}" type="${f.t === "date" ? "date" : f.t === "number" ? "number" : "text"}" value="${esc(v)}"></label>`;
-    }).join("");
-
-    // Checklist
     const groups = [];
     const byGroup = {};
     (p.checklist || []).forEach((it) => { const g = it.grupo || "Geral"; if (!byGroup[g]) { byGroup[g] = []; groups.push(g); } byGroup[g].push(it); });
@@ -826,19 +889,61 @@ details.fold[open] > summary { margin-bottom: 10px; }
       </div>`;
     }).join("")}</div>`).join("");
     const groupOpts = Array.from(new Set(groups.concat(Object.keys(TEMPLATES[p.tipo] || {})).concat(["Geral"]))).map((g) => `<option>${esc(g)}</option>`).join("");
+    return `${c.total ? `<div class="prog">
+        <div class="bar" aria-hidden="true"><i class="c-ok" style="width:${w(c.ok)}"></i><i class="c-fail" style="width:${w(c.falha)}"></i><i class="c-na" style="width:${w(c.na)}"></i></div>
+        <div class="legend"><span><i class="dot c-ok"></i>OK <b>${c.ok}</b></span><span><i class="dot c-fail"></i>Falha <b>${c.falha}</b></span><span><i class="dot c-na"></i>N.A. <b>${c.na}</b></span><span><i class="dot c-pend"></i>Pendente <b>${c.pendente}</b></span></div>
+      </div>` : `<div><button class="btn sm" data-action="ck-template">Usar checklist padrão</button></div>`}
+      <div>${ck}</div>
+      <div class="add-row">
+        <input class="field-in" id="ck-new" placeholder="Novo item de teste…" aria-label="Novo item de teste">
+        <select class="field-in" id="ck-group" aria-label="Grupo">${groupOpts}</select>
+        <button class="btn" data-action="ck-add">Adicionar</button>
+      </div>`;
+  }
 
-    // History
-    const diario = (p.diario || []).slice().sort((a, b) => (a.data < b.data ? 1 : a.data > b.data ? -1 : 0));
-    const log = diario.length
-      ? diario.map((e) => {
-          const tipo = e.tipo || "nota";
-          return `<div class="entry ${e.auto ? "auto" : ""}"><span class="when">${esc(fmtDate(e.data))}${e.autor ? `<span class="by" data-uid="${esc(e.autor)}"></span>` : ""}</span>
-          <span class="what"><span class="tag ${esc(tipo)}">${esc(LOG_LABEL[tipo] || "Nota")}</span>${esc(e.texto)}</span>
-          ${e.auto ? "<span></span>" : `<button class="icon-btn" data-action="log-del" data-entry="${esc(e.id)}" aria-label="Apagar registro">×</button>`}</div>`;
-        }).join("")
-      : `<div class="entry"><span class="when">—</span><span class="what" style="color:var(--muted)">Nenhum registro. Anote cada visita, ligação ou teste.</span><span></span></div>`;
+  function tabDados(p) {
+    const fields = (FIELDS[p.tipo] || []).map((f) => {
+      const v = p[f.k] == null ? "" : p[f.k];
+      const idf = "fd-" + f.k;
+      if (f.t === "area") return `<label class="wide" for="${idf}">${f.l}<textarea class="field-in" id="${idf}" data-field="${f.k}">${esc(v)}</textarea></label>`;
+      return `<label for="${idf}">${f.l}<input class="field-in ${f.mono ? "mono" : ""}" id="${idf}" data-field="${f.k}" type="${f.t === "date" ? "date" : f.t === "number" ? "number" : "text"}" value="${esc(v)}"></label>`;
+    }).join("");
+    return `<div class="grid">${fields}</div>`;
+  }
 
+  function renderDetail() {
+    const el = $("#detail");
+    const id = state.selectedId;
+    const p = id && state.projects.get(id);
+    $("#app").classList.toggle("show-detail", !!p && state.view === "projetos");
+    if (!p) {
+      el.innerHTML = `<div class="placeholder"><strong>Selecione um projeto</strong>Escolha um projeto na lista para ver a jornada, o próximo passo e o histórico.</div>`;
+      return;
+    }
+    const c = counts(p);
+    const pct = c.total ? Math.round(((c.ok + c.na) / c.total) * 100) : 0;
+    const nt = nextOf(p);
+    const closed = CLOSED.has(p.status) || stageKey(p) === "encerrado";
+
+    const si = stageIdx(p);
+    const steps = stages(p).map((s, i) => {
+      const since = stageSince(p, s.k);
+      return `<li class="step ${i < si ? "done" : i === si ? "cur" : ""}"><button data-action="stage" data-v="${s.k}" ${i === si ? 'aria-current="step"' : ""} title="Mover para esta etapa">
+        <span class="node"><span class="dotn"></span><span class="ln"></span></span>${esc(s.l)}${since && i <= si ? `<span class="sd">${fmtDate(since)}</span>` : ""}</button></li>`;
+    }).join("");
+    const curSince = stageSince(p, stageKey(p));
     const subTxt = subline(p) + (p.tipo === "homologacao" && p.contatoTel ? " · " + p.contatoTel : "");
+
+    const nCls = nt ? (dueClass(nt.prazo) || "") : (closed ? "" : "warn");
+    const nTxt = nt ? (dueClass(nt.prazo) === "late" ? "atrasado" : fmtDate(nt.prazo).slice(0, 5)) : (closed ? "" : "nenhum");
+    const nDiario = (p.diario || []).filter((e) => !e.auto).length;
+    const tabs = [
+      { k: "proximo", l: "Próximo passo", cnt: nTxt, cls: nCls },
+      { k: "historico", l: "Histórico", cnt: String(nDiario), cls: "" },
+      { k: "checklist", l: "Checklist", cnt: c.total ? (c.falha ? `${c.falha} falha${c.falha > 1 ? "s" : ""}` : pct + "%") : "", cls: c.falha ? "late" : "" },
+      { k: "dados", l: "Dados", cnt: "", cls: "" },
+    ];
+    const tabBody = state.tab === "historico" ? tabHistorico(p) : state.tab === "checklist" ? tabChecklist(p) : state.tab === "dados" ? tabDados(p) : tabProximo(p, id);
 
     el.innerHTML = `<div class="detail">
       <div class="d-head">
@@ -851,7 +956,7 @@ details.fold[open] > summary { margin-bottom: 10px; }
           <button class="btn sm" data-action="report">Copiar relatório</button>
           <button class="btn sm ghost danger" data-action="del-ask">Excluir</button>
         </div>
-        ${state.confirmDelete ? `<div class="confirm">Excluir “${esc(p.titulo || "Sem nome")}” com todo o histórico, tarefas e checklist? <button class="btn sm danger" data-action="del-yes">Sim, excluir</button><button class="btn sm ghost" data-action="del-no">Cancelar</button></div>` : ""}
+        ${state.confirmDelete ? `<div class="confirm">Excluir “${esc(p.titulo || "Sem nome")}” com todo o histórico e checklist? <button class="btn sm danger" data-action="del-yes">Sim, excluir</button><button class="btn sm ghost" data-action="del-no">Cancelar</button></div>` : ""}
       </div>
       <fieldset class="fs" ${state.readOnly ? "disabled" : ""}>
       <div class="d-head2">
@@ -867,95 +972,69 @@ details.fold[open] > summary { margin-bottom: 10px; }
       <section class="sec">
         <div class="sec-h"><h2>Jornada</h2><span class="aside">Clique numa etapa para avançar. A mudança fica registrada no histórico.</span></div>
         <div class="journey"><ol class="steps">${steps}</ol></div>
-        <div class="since">Etapa atual: <b>${esc(stageLabel(p))}</b>${curSince ? ` desde ${fmtDate(curSince)} (${relDay(curSince)})` : ""}</div>
+        <div class="since">Etapa atual: <b>${esc(stageLabel(p))}</b>${curSince ? ` desde ${fmtDate(curSince)}` : ""}</div>
       </section>
 
-      <section class="sec">
-        <div class="sec-h"><h2>Próximos passos</h2><span class="aside">${openT.length ? `${openT.length} em aberto` : "Nada pendente"}</span></div>
-        ${suggest}
-        <div class="tasks">${openT.map((t) => taskRow(t, id)).join("") || `<div class="task"><span></span><span class="tx" style="color:var(--muted)">Nenhuma tarefa em aberto. Adicione o que precisa ser feito ou agende um retorno.</span></div>`}</div>
-        <div class="task-add">
-          <input class="field-in" type="text" id="task-new" placeholder="O que precisa ser feito…" aria-label="Nova tarefa">
-          <input class="field-in mono" type="date" id="task-date" value="${addDays(7)}" aria-label="Prazo">
-          <select class="field-in" id="task-tipo" aria-label="Tipo"><option value="tarefa">Tarefa</option><option value="contato">Retorno ao cliente / contato</option></select>
-          <button class="btn primary" data-action="task-add">Adicionar</button>
-        </div>
-        <div class="quick">Lembrar de fazer retorno em:
-          ${[7, 15, 30, 60, 90].map((n) => `<button class="chip" data-action="retorno" data-v="${n}">${n} dias</button>`).join("")}
-        </div>
-        ${doneT.length ? `<button class="btn sm ghost done-toggle" data-action="toggle-done">${state.showDone ? "Ocultar" : "Mostrar"} concluídas (${doneT.length})</button>` : ""}
-        ${state.showDone && doneT.length ? `<div class="tasks">${doneT.map((t) => taskRow(t, id)).join("")}</div>` : ""}
-      </section>
-
-      <section class="sec">
-        <div class="sec-h"><h2>Histórico</h2><span class="aside">O que foi feito, em ordem. ${diario.length} registro${diario.length === 1 ? "" : "s"}</span></div>
-        <div class="log-add">
-          <input class="field-in mono" id="log-date" type="date" value="${todayISO()}" aria-label="Data">
-          <select class="field-in" id="log-tipo" aria-label="Tipo de registro">${LOG_TIPOS.map((t) => `<option value="${t.v}" ${state.logTipo === t.v ? "selected" : ""}>${t.l}</option>`).join("")}</select>
-          <textarea class="field-in" id="log-text" placeholder="O que foi feito, o que o cliente disse, problemas…" aria-label="Registro"></textarea>
-          <button class="btn primary" data-action="log-add">Registrar</button>
-        </div>
-        <div class="log">${log}</div>
-      </section>
-
-      <details class="fold" ${c.total && c.pendente < c.total ? "open" : ""}>
-        <summary><div class="sec-h"><h2>Checklist técnico</h2><span class="aside">${c.total ? `${pct}% concluído · ${c.falha} falha${c.falha === 1 ? "" : "s"}` : "Sem itens"}</span></div></summary>
-        <div class="sec">
-          ${c.total ? `<div class="prog">
-            <div class="bar" aria-hidden="true"><i class="c-ok" style="width:${w(c.ok)}"></i><i class="c-fail" style="width:${w(c.falha)}"></i><i class="c-na" style="width:${w(c.na)}"></i></div>
-            <div class="legend"><span><i class="dot c-ok"></i>OK <b>${c.ok}</b></span><span><i class="dot c-fail"></i>Falha <b>${c.falha}</b></span><span><i class="dot c-na"></i>N.A. <b>${c.na}</b></span><span><i class="dot c-pend"></i>Pendente <b>${c.pendente}</b></span></div>
-          </div>` : `<div><button class="btn sm" data-action="ck-template">Usar checklist padrão</button></div>`}
-          <div>${ck}</div>
-          <div class="add-row">
-            <input class="field-in" id="ck-new" placeholder="Novo item de teste…" aria-label="Novo item de teste">
-            <select class="field-in" id="ck-group" aria-label="Grupo">${groupOpts}</select>
-            <button class="btn" data-action="ck-add">Adicionar</button>
-          </div>
-        </div>
-      </details>
-
-      <details class="fold" open>
-        <summary><div class="sec-h"><h2>Dados</h2><span class="aside">${p.tipo === "homologacao" ? "Cliente, contato, máquina e versão" : "Versão, hardware e ambiente de teste"}</span></div></summary>
-        <div class="grid">${fields}</div>
-      </details>
+      <div class="dtabs" role="tablist" aria-label="Seções do projeto">
+        ${tabs.map((t) => `<button role="tab" data-action="tab" data-v="${t.k}" aria-selected="${state.tab === t.k}">${t.l}${t.cnt ? `<span class="cnt ${t.cls}">${esc(t.cnt)}</span>` : ""}</button>`).join("")}
+      </div>
+      <section class="sec" role="tabpanel">${tabBody}</section>
       </fieldset>
     </div>`;
     const jr = el.querySelector(".journey"), cur = el.querySelector(".step.cur");
-    if (jr && cur) jr.scrollLeft = Math.max(0, cur.offsetLeft - jr.offsetLeft - 24);
+    if (jr && cur && cur.offsetLeft - jr.offsetLeft + cur.offsetWidth > jr.clientWidth) jr.scrollLeft = cur.offsetLeft - jr.offsetLeft - 24;
     hydrateNames();
   }
 
   function renderAgenda() {
     const el = $("#agenda");
     if (state.view !== "agenda") return;
-    let tasks = allOpenTasks();
-    if (state.agendaTipo === "contato") tasks = tasks.filter((x) => x.t.tipo === "contato");
+    const act = activeProjects();
+    let items = act.filter(([, p]) => nextOf(p)).map(([id, p]) => ({ id, p, n: nextOf(p) }));
+    if (state.agendaTipo === "contato") items = items.filter((x) => x.n.tipo === "contato");
+    items.sort((a, b) => (a.n.prazo < b.n.prazo ? -1 : a.n.prazo > b.n.prazo ? 1 : 0));
+    const sem = act.filter(([, p]) => !nextOf(p));
+    const row = (x) => {
+      const p = x.p, n = x.n;
+      const tel = p.tipo === "homologacao" ? p.contatoTel : "";
+      return `<div class="arow">
+        <span class="ad ${dueClass(n.prazo)}">${fmtDate(n.prazo)}<small>${esc(relDay(n.prazo))}</small></span>
+        <div class="at"><span class="tag ${esc(n.tipo)}">${esc(NEXT_LABEL[n.tipo] || "Tarefa")}</span>${esc(n.texto)}
+          <div class="sub">${esc(p.titulo || "Sem nome")}${p.cliente ? " · " + esc(p.cliente) : ""}${tel ? ` · <span class="mono">${esc(tel)}</span>` : ""}</div></div>
+        <button class="btn sm" data-action="open" data-id="${esc(x.id)}">Abrir</button>
+      </div>`;
+    };
     const buckets = [
-      { k: "late", l: "Atrasadas", cls: "late", f: (d) => d !== null && d < 0 },
-      { k: "today", l: "Hoje", cls: "today", f: (d) => d === 0 },
-      { k: "week", l: "Próximos 7 dias", cls: "", f: (d) => d !== null && d > 0 && d <= 7 },
-      { k: "later", l: "Mais adiante", cls: "", f: (d) => d !== null && d > 7 },
-      { k: "none", l: "Sem data", cls: "", f: (d) => d === null },
+      { l: "Atrasados", cls: "late", f: (d) => d !== null && d < 0 },
+      { l: "Hoje", cls: "today", f: (d) => d === 0 },
+      { l: "Próximos 7 dias", cls: "", f: (d) => d !== null && d > 0 && d <= 7 },
+      { l: "Mais adiante", cls: "", f: (d) => d !== null && d > 7 },
     ];
-    const body = buckets.map((b) => {
-      const items = tasks.filter((x) => b.f(daysFrom(x.t.prazo)));
-      if (!items.length) return "";
-      return `<div class="bucket"><div class="bucket-h ${b.cls}">${b.l} <span class="ct">${items.length}</span></div>
-        <div class="tasks">${items.map((x) => taskRow(x.t, x.id, { showProject: true })).join("")}</div></div>`;
+    let body = buckets.map((b) => {
+      const list = items.filter((x) => b.f(daysFrom(x.n.prazo)));
+      if (!list.length) return "";
+      return `<div class="bucket"><div class="bucket-h ${b.cls}">${b.l} <span class="ct">${list.length}</span></div>${list.map(row).join("")}</div>`;
     }).join("");
+    if (sem.length && state.agendaTipo === "todas") {
+      body += `<div class="bucket"><div class="bucket-h today">Sem próximo passo <span class="ct">${sem.length}</span></div>${sem.map(([id, p]) => `<div class="arow">
+        <span class="ad"><small>—</small></span>
+        <div class="at">${esc(p.titulo || "Sem nome")}<div class="sub">${esc(subline(p))} · ${esc(stageLabel(p))}</div></div>
+        <button class="btn sm" data-action="open" data-id="${esc(id)}" data-sched="1">Agendar</button></div>`).join("")}</div>`;
+    }
     el.innerHTML = `<div class="agenda">
       <div class="agenda-head"><h2>Agenda</h2>
         <div class="seg" role="group" aria-label="Filtro">
-          <button data-action="agenda-tipo" data-v="todas" aria-pressed="${state.agendaTipo === "todas"}">Todas as tarefas</button>
-          <button data-action="agenda-tipo" data-v="contato" aria-pressed="${state.agendaTipo === "contato"}">Só retornos</button>
+          <button data-action="agenda-tipo" data-v="todas" aria-pressed="${state.agendaTipo === "todas"}">Todos os passos</button>
+          <button data-action="agenda-tipo" data-v="contato" aria-pressed="${state.agendaTipo === "contato"}">Só contatos</button>
         </div>
       </div>
-      ${body || `<div class="empty"><strong>Nada pendente</strong>Quando você adicionar próximos passos ou retornos nos projetos, eles aparecem aqui por data.</div>`}
+      <p class="hint">Cada projeto ativo tem um próximo passo. Abra o projeto para concluir e agendar o seguinte.</p>
+      ${body || `<div class="empty"><strong>Nada agendado</strong>Abra um projeto e agende o próximo passo, como “entrar em contato em 7 dias”.</div>`}
     </div>`;
   }
 
   function renderView() {
-    document.querySelectorAll('[data-action="view"]').forEach((b) => { if (b.closest(".tabs")) b.setAttribute("aria-pressed", String(b.dataset.v === state.view)); });
+    document.querySelectorAll('.tabs [data-action="view"]').forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.v === state.view)));
     $("#main").hidden = state.view !== "projetos";
     $("#agenda").hidden = state.view !== "agenda";
     $("#app").classList.toggle("show-detail", state.view === "projetos" && !!state.selectedId && state.projects.has(state.selectedId));
@@ -977,8 +1056,8 @@ details.fold[open] > summary { margin-bottom: 10px; }
     L.push(`Etapa: ${stageLabel(p)} | Status: ${statusLabel(p.status)} | Prioridade: ${(PRIOR.find((x) => x.v === p.prioridade) || PRIOR[1]).l}`);
     L.push("");
     (FIELDS[p.tipo] || []).forEach((f) => { if (p[f.k]) L.push(`${f.l}: ${f.t === "date" ? fmtDate(p[f.k]) : p[f.k]}`); });
-    const open = openTasksOf(p);
-    if (open.length) { L.push("", "PRÓXIMOS PASSOS:"); open.forEach((t) => L.push(`- ${t.texto}${t.prazo ? " (até " + fmtDate(t.prazo) + ")" : ""}`)); }
+    const nt = nextOf(p);
+    if (nt) L.push("", `PRÓXIMO PASSO: ${nt.texto} (${fmtDate(nt.prazo)})`);
     if (c.total) {
       L.push("", `Checklist: ${c.ok} OK, ${c.falha} falha, ${c.na} N.A., ${c.pendente} pendente (de ${c.total})`);
       const fails = (p.checklist || []).filter((i) => i.status === "falha");
@@ -1005,27 +1084,48 @@ details.fold[open] > summary { margin-bottom: 10px; }
   }
 
   /* ---------- Events ---------- */
-  const WRITE_ACTIONS = new Set(["new", "nf-create", "del-ask", "del-yes", "ck-set", "ck-del", "ck-template", "ck-add", "log-add", "log-del", "stage", "task-add", "task-del", "task-toggle", "retorno", "followups"]);
+  const WRITE_ACTIONS = new Set(["new", "nf-create", "del-ask", "del-yes", "ck-set", "ck-del", "ck-template", "ck-add", "log-add", "log-del", "stage", "next-save", "next-drop", "complete-start", "complete-save"]);
+
+  function selectProject(pid, tab) {
+    state.selectedId = pid; state.view = "projetos"; state.confirmDelete = false; state.completing = false;
+    state.openNotes.clear(); state.tab = tab || "proximo";
+    renderView(); renderList(); renderDetail(); window.scrollTo(0, 0);
+  }
 
   document.addEventListener("click", (ev) => {
     const b = ev.target.closest("[data-action]");
     if (!b) return;
     const a = b.dataset.action;
-    if (state.readOnly && WRITE_ACTIONS.has(a)) { if (a === "task-toggle") ev.preventDefault(); return; }
+    if (state.readOnly && WRITE_ACTIONS.has(a)) return;
 
     if (a === "view") { state.view = b.dataset.v; renderView(); return; }
-    if (a === "agenda-retornos") { state.view = "agenda"; state.agendaTipo = "contato"; renderView(); return; }
     if (a === "agenda-tipo") { state.agendaTipo = b.dataset.v; renderAgenda(); return; }
-    if (a === "open") { state.selectedId = b.dataset.id; state.view = "projetos"; state.confirmDelete = false; renderView(); renderList(); renderDetail(); window.scrollTo(0, 0); return; }
-    if (a === "task-toggle") {
-      const t = toggleTask(b.dataset.id, b.dataset.task);
-      if (t && t.feito) {
-        toast(t.tipo === "contato" ? "Retorno concluído. Registre no histórico o que o cliente disse." : "Tarefa concluída.");
-        if (t.tipo === "contato" && state.view === "projetos") {
-          state.logTipo = "ligacao"; renderDetail();
-          const lt = $("#log-text"); if (lt) { lt.focus(); lt.scrollIntoView({ block: "center" }); }
-        }
-      }
+    if (a === "open") { selectProject(b.dataset.id, "proximo"); return; }
+
+    // Schedule form controls: update the form in place, no re-render
+    if (a === "sched-tipo") {
+      const pre = b.dataset.prefix; const id = state.selectedId; const p = id && state.projects.get(id); if (!p) return;
+      $("#" + pre + "-tipo").value = b.dataset.v;
+      b.parentElement.querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+      const tx = $("#" + pre + "-texto");
+      if (tx.dataset.auto === "1") tx.value = defaultNextText(p, b.dataset.v);
+      if (b.dataset.v === "tarefa") tx.focus();
+      return;
+    }
+    if (a === "sched-days") {
+      const pre = b.dataset.prefix;
+      $("#" + pre + "-prazo").value = addDays(Number(b.dataset.v));
+      $("#" + pre + "-none").value = "0";
+      $("#" + pre + "-sched").classList.remove("off");
+      b.parentElement.querySelectorAll(".chip").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+      return;
+    }
+    if (a === "sched-none") {
+      const pre = b.dataset.prefix;
+      const on = $("#" + pre + "-none").value !== "1";
+      $("#" + pre + "-none").value = on ? "1" : "0";
+      $("#" + pre + "-sched").classList.toggle("off", on);
+      b.parentElement.querySelectorAll(".chip").forEach((x) => x.setAttribute("aria-pressed", String(on ? x === b : false)));
       return;
     }
 
@@ -1042,25 +1142,26 @@ details.fold[open] > summary { margin-bottom: 10px; }
         etapasHist: [{ etapa: first, data: todayISO(), autor: state.myId || "" }],
         checklist: makeChecklist(state.newTipo),
         diario: [{ id: rid(), data: todayISO(), tipo: "etapa", texto: "Projeto criado", autor: state.myId || "", auto: true }],
-        tarefas: [], created: Date.now(), updated: Date.now(), createdBy: state.myId || "",
+        proximo: null, created: Date.now(), updated: Date.now(), createdBy: state.myId || "",
       });
       saver(nid).isNew = true;
-      state.selectedId = nid; state.confirmDelete = false;
       $("#newform").hidden = true; $("#nf-titulo").value = "";
       if (state.filter.status !== "todos" && state.filter.status !== "ativos") state.filter.status = "ativos";
       if (state.filter.tipo !== "todos" && state.filter.tipo !== state.newTipo) state.filter.tipo = "todos";
       renderFilters();
+      state.selectedId = nid; state.tab = "dados"; state.completing = false; state.confirmDelete = false;
       changed(nid, [], { now: true, detail: true });
       return;
     }
     if (a === "f-tipo") { state.filter.tipo = b.dataset.v; renderFilters(); renderList(); return; }
-    if (a === "select") { state.selectedId = b.dataset.id; state.confirmDelete = false; state.openNotes.clear(); state.showDone = false; renderList(); renderDetail(); window.scrollTo(0, 0); return; }
+    if (a === "select") { selectProject(b.dataset.id, "proximo"); return; }
     if (a === "back") { state.selectedId = null; renderList(); renderDetail(); return; }
 
     const id = state.selectedId;
     const p = id && state.projects.get(id);
     if (!p) return;
 
+    if (a === "tab") { state.tab = b.dataset.v; state.completing = false; renderDetail(); return; }
     if (a === "report") {
       const txt = report(p);
       try { navigator.clipboard.writeText(txt).then(() => toast("Relatório copiado. Cole no e-mail ou no Teams."), () => fallbackCopy(txt)); }
@@ -1077,17 +1178,30 @@ details.fold[open] > summary { margin-bottom: 10px; }
       return;
     }
     if (a === "stage") { setStage(id, b.dataset.v); return; }
-    if (a === "task-add") { addTaskFromForm(id); return; }
-    if (a === "task-del") { p.tarefas = (p.tarefas || []).filter((t) => t.id !== b.dataset.task); changed(id, ["tarefas"], { detail: true }); return; }
-    if (a === "retorno") { const n = Number(b.dataset.v); addTask(id, retornoTexto(p), addDays(n), "contato"); toast(`Retorno agendado para ${fmtDate(addDays(n))}.`); return; }
-    if (a === "followups") {
-      const txt = retornoTexto(p);
-      p.tarefas = (p.tarefas || []).concat([30, 60, 90].map((n) => ({ id: rid(), texto: `${txt} (${n} dias)`, prazo: addDays(n), tipo: "contato", feito: false, autor: state.myId || "", criado: todayISO() })));
-      changed(id, ["tarefas"], { detail: true, now: true });
-      toast("Retornos de 30, 60 e 90 dias agendados.");
+
+    if (a === "next-save") {
+      const n = readSched("ns"); if (!n) return;
+      p.proximo = n;
+      changed(id, ["proximo"], { detail: true, now: true });
+      toast(`Agendado para ${fmtDate(n.prazo)}.`);
       return;
     }
-    if (a === "toggle-done") { state.showDone = !state.showDone; renderDetail(); return; }
+    if (a === "next-drop") { p.proximo = null; changed(id, ["proximo"], { detail: true, now: true }); return; }
+    if (a === "complete-start") { state.completing = true; renderDetail(); const t = $("#cr-text"); if (t) t.focus(); return; }
+    if (a === "complete-cancel") { state.completing = false; renderDetail(); return; }
+    if (a === "complete-save") {
+      const nt = nextOf(p); if (!nt) return;
+      const n = readSched("cp"); if (n === false) return;
+      const res = ($("#cr-text").value || "").trim();
+      const tipo = $("#cr-tipo").value || NEXT_TO_LOG[nt.tipo] || "nota";
+      p.diario = (p.diario || []).concat([{ id: rid(), data: todayISO(), tipo, texto: nt.texto + (res ? "\n" + res : ""), autor: state.myId || "", prazoOriginal: nt.prazo }]);
+      p.proximo = n || null;
+      state.completing = false;
+      changed(id, ["diario", "proximo"], { detail: true, now: true });
+      toast(n ? `Registrado. Próximo passo em ${fmtDate(n.prazo)}.` : "Registrado no histórico.");
+      return;
+    }
+
     if (a === "ck-set") {
       const it = p.checklist.find((x) => x.id === b.dataset.item); if (!it) return;
       it.status = it.status === b.dataset.v ? "pendente" : b.dataset.v;
@@ -1116,11 +1230,6 @@ details.fold[open] > summary { margin-bottom: 10px; }
     if (a === "log-del") { p.diario = (p.diario || []).filter((e) => e.id !== b.dataset.entry); changed(id, ["diario"], { detail: true }); return; }
   });
 
-  function addTaskFromForm(id) {
-    const txt = $("#task-new").value.trim(); if (!txt) { $("#task-new").focus(); return; }
-    addTask(id, txt, $("#task-date").value, $("#task-tipo").value);
-    const n = $("#task-new"); if (n) n.focus();
-  }
   function addItem(p, id) {
     const txt = $("#ck-new").value.trim(); if (!txt) { $("#ck-new").focus(); return; }
     const grupo = $("#ck-group").value || "Geral";
@@ -1133,6 +1242,13 @@ details.fold[open] > summary { margin-bottom: 10px; }
   document.addEventListener("input", (ev) => {
     const t = ev.target;
     if (t.id === "f-q") { state.filter.q = t.value; renderList(); return; }
+    if (/-texto$/.test(t.id) && t.dataset.auto) { t.dataset.auto = "0"; return; }
+    if (/-prazo$/.test(t.id) && t.dataset.prefix) {
+      const pre = t.dataset.prefix;
+      document.querySelectorAll(`#${pre}-sched .chip`).forEach((x) => x.setAttribute("aria-pressed", "false"));
+      $("#" + pre + "-none").value = "0"; $("#" + pre + "-sched").classList.remove("off");
+      return;
+    }
     const id = state.selectedId; const p = id && state.projects.get(id);
     if (!p) return;
     if (t.dataset.field && t.tagName !== "SELECT") {
@@ -1151,9 +1267,10 @@ details.fold[open] > summary { margin-bottom: 10px; }
     const id = state.selectedId; const p = id && state.projects.get(id);
     if (!p) return;
     if (t.tagName === "SELECT" && t.dataset.field) { p[t.dataset.field] = t.value; changed(id, [t.dataset.field], { now: true, detail: !!t.dataset.rerender }); return; }
-    if (t.dataset.taskDate) {
-      const tk = (p.tarefas || []).find((x) => x.id === t.dataset.taskDate); if (!tk) return;
-      tk.prazo = t.value; changed(id, ["tarefas"], { now: true, detail: true });
+    if (t.id === "next-date" && p.proximo && t.value) {
+      p.proximo = Object.assign({}, p.proximo, { prazo: t.value });
+      changed(id, ["proximo"], { now: true, detail: true });
+      toast(`Data alterada para ${fmtDate(t.value)}.`);
     }
   });
   document.addEventListener("keydown", (ev) => {
@@ -1161,7 +1278,7 @@ details.fold[open] > summary { margin-bottom: 10px; }
     const t = ev.target;
     const id = state.selectedId; const p = id && state.projects.get(id);
     if (t.id === "ck-new") { ev.preventDefault(); if (p) addItem(p, id); }
-    if (t.id === "task-new") { ev.preventDefault(); if (p && !state.readOnly) addTaskFromForm(id); }
+    if (t.id === "ns-texto") { ev.preventDefault(); const bt = document.querySelector('[data-action="next-save"]'); bt && bt.click(); }
     if (t.id === "nf-titulo") { ev.preventDefault(); document.querySelector('[data-action="nf-create"]').click(); }
     if (t.id === "log-text" && (ev.ctrlKey || ev.metaKey)) { ev.preventDefault(); document.querySelector('[data-action="log-add"]').click(); }
   });
