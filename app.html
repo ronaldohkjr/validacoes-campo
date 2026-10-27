@@ -131,6 +131,7 @@ button.stat:hover { background: var(--raised); }
 .stage-mini { display: inline-flex; gap: 2px; }
 .stage-mini i { width: 9px; height: 4px; border-radius: 1px; background: var(--line); display: block; }
 .stage-mini i.on { background: var(--accent); }
+.stage-mini i.pend { background: var(--pend); }
 .late { color: var(--fail); font-weight: 600; }
 .today { color: var(--pend); font-weight: 600; }
 .empty { padding: 28px 18px; color: var(--muted); text-align: center; display: flex; flex-direction: column; gap: 10px; align-items: center; }
@@ -179,6 +180,17 @@ fieldset.fs { border: 0; padding: 0; margin: 0; min-width: 0; display: flex; fle
 .step.done button { color: var(--ink); }
 .step button:hover .dotn { border-color: var(--accent); }
 .step .sd { font-family: var(--f-mono); font-size: 11px; color: var(--muted); font-weight: 400; }
+.step.pend .dotn { background: var(--pend-soft); border-color: var(--pend); border-style: dashed; }
+.step.pend .ln { background: var(--accent); }
+.step.pend button { color: var(--ink); }
+.step .pl { font-size: 10.5px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: var(--pend); }
+.stage-panel { border: 1px solid var(--line); background: var(--raised); border-radius: 8px; padding: 12px 14px; display: flex; flex-direction: column; gap: 10px; }
+.stage-panel .sp-q { font-size: 13.5px; }
+.sp-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; padding: 4px 0; border-top: 1px dashed var(--line); }
+.sp-row .seg { flex: 0 0 auto; }
+.sp-row .seg button[data-v="pend"][aria-pressed="true"] { background: var(--pend-soft); color: var(--pend); }
+.pend-list { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 13px; background: var(--pend-soft); border-radius: 6px; padding: 6px 10px; }
+.pend-list b { color: var(--pend); }
 .since { font-size: 12.5px; color: var(--muted); }
 .suggest { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; background: var(--info-soft); border-radius: 6px; padding: 8px 12px; font-size: 13px; }
 
@@ -411,6 +423,7 @@ details.fold[open] > summary { margin-bottom: 10px; }
       { k: "instalacao", l: "Instalação" },
       { k: "testes", l: "Homologação / testes" },
       { k: "entrega", l: "Entrega e treinamento" },
+      { k: "acomp_campo", l: "Acompanhamento em campo" },
       { k: "acompanhamento", l: "Acompanhamento pós-entrega" },
       { k: "encerrado", l: "Encerrado" },
     ],
@@ -562,6 +575,7 @@ details.fold[open] > summary { margin-bottom: 10px; }
     newTipo: "homologacao",
     confirmDelete: false,
     completing: false,
+    stagePanel: null,
     openNotes: new Set(),
     logTipo: "visita",
     readOnly: false,
@@ -674,7 +688,7 @@ details.fold[open] > summary { margin-bottom: 10px; }
     const seen = new Set();
     rows.forEach(({ id, data }) => {
       seen.add(id);
-      if (!busy(id)) state.projects.set(id, Object.assign({ checklist: [], diario: [], etapasHist: [], proximo: null }, clone(data)));
+      if (!busy(id)) state.projects.set(id, Object.assign({ checklist: [], diario: [], etapasHist: [], etapasPend: [], proximo: null }, clone(data)));
     });
     for (const id of Array.from(state.projects.keys())) if (!seen.has(id) && !busy(id)) state.projects.delete(id);
     state.loaded = true;
@@ -685,13 +699,37 @@ details.fold[open] > summary { margin-bottom: 10px; }
   }
 
   /* ---------- Domain actions ---------- */
-  function setStage(id, k) {
+  // marks: { stageKey: "ok" | "pend" } for the stages passed over when moving ahead
+  function setStage(id, k, marks) {
     const p = state.projects.get(id); if (!p || stageKey(p) === k) return;
     const st = stages(p).find((s) => s.k === k); if (!st) return;
+    const pend = new Set(p.etapasPend || []);
+    const novasPend = [];
+    Object.keys(marks || {}).forEach((sk) => {
+      if (marks[sk] === "pend") { if (!pend.has(sk)) novasPend.push(sk); pend.add(sk); } else pend.delete(sk);
+    });
+    pend.delete(k);
     p.etapa = k;
+    p.etapasPend = Array.from(pend);
     p.etapasHist = (p.etapasHist || []).concat([{ etapa: k, data: todayISO(), autor: state.myId || "" }]);
-    p.diario = (p.diario || []).concat([{ id: rid(), data: todayISO(), tipo: "etapa", texto: "Etapa: " + st.l, autor: state.myId || "", auto: true }]);
-    changed(id, ["etapa", "etapasHist", "diario"], { detail: true, now: true });
+    const nomes = novasPend.map((sk) => (stages(p).find((s) => s.k === sk) || {}).l).filter(Boolean);
+    p.diario = (p.diario || []).concat([{ id: rid(), data: todayISO(), tipo: "etapa", texto: "Etapa: " + st.l + (nomes.length ? " (pendente: " + nomes.join(", ") + ")" : ""), autor: state.myId || "", auto: true }]);
+    state.stagePanel = null;
+    changed(id, ["etapa", "etapasPend", "etapasHist", "diario"], { detail: true, now: true });
+  }
+  function setPending(id, k, on) {
+    const p = state.projects.get(id); if (!p) return;
+    const st = stages(p).find((s) => s.k === k); if (!st) return;
+    const pend = new Set(p.etapasPend || []);
+    if (on) pend.add(k); else pend.delete(k);
+    p.etapasPend = Array.from(pend);
+    p.diario = (p.diario || []).concat([{ id: rid(), data: todayISO(), tipo: "etapa", texto: (on ? "Etapa pendente: " : "Etapa concluída: ") + st.l, autor: state.myId || "", auto: true }]);
+    state.stagePanel = null;
+    changed(id, ["etapasPend", "diario"], { detail: true, now: true });
+  }
+  function pendingStages(p) {
+    const ci = stageIdx(p); const pend = new Set(p.etapasPend || []);
+    return stages(p).filter((s, i) => i < ci && pend.has(s.k));
   }
   function readSched(prefix) {
     const none = $("#" + prefix + "-none");
@@ -762,7 +800,9 @@ details.fold[open] > summary { margin-bottom: 10px; }
       const c = counts(p);
       const nt = nextOf(p);
       const si = stageIdx(p);
-      const mini = stages(p).map((s, i) => `<i class="${i <= si ? "on" : ""}"></i>`).join("");
+      const pendSet = new Set(p.etapasPend || []);
+      const mini = stages(p).map((s, i) => `<i class="${i < si && pendSet.has(s.k) ? "pend" : i <= si ? "on" : ""}"></i>`).join("");
+      const nPend = pendingStages(p).length;
       const closed = CLOSED.has(p.status) || stageKey(p) === "encerrado";
       const nx = nt
         ? `<span class="nx">→ <b>${esc(nt.texto)}</b> · <span class="mono ${dueClass(nt.prazo)}">${fmtDate(nt.prazo)}</span></span>`
@@ -774,7 +814,7 @@ details.fold[open] > summary { margin-bottom: 10px; }
         <span class="pill st-${esc(p.status)}">${esc(statusLabel(p.status))}</span>
         <span class="sub">${esc(subline(p))}</span>
         ${nx}
-        <span class="meta">${p.exemplo ? '<span class="tag-ex">exemplo</span>' : ""}<span class="stage-mini" aria-hidden="true">${mini}</span><span>${esc(stageLabel(p))}</span>${fails}</span>
+        <span class="meta">${p.exemplo ? '<span class="tag-ex">exemplo</span>' : ""}<span class="stage-mini" aria-hidden="true">${mini}</span><span>${esc(stageLabel(p))}</span>${nPend ? `<span class="today">${nPend} etapa${nPend > 1 ? "s" : ""} pendente${nPend > 1 ? "s" : ""}</span>` : ""}${fails}</span>
       </button>`;
     }).join("");
   }
@@ -918,11 +958,36 @@ details.fold[open] > summary { margin-bottom: 10px; }
     const closed = CLOSED.has(p.status) || stageKey(p) === "encerrado";
 
     const si = stageIdx(p);
+    const pendSet = new Set(p.etapasPend || []);
     const steps = stages(p).map((s, i) => {
       const since = stageSince(p, s.k);
-      return `<li class="step ${i < si ? "done" : i === si ? "cur" : ""}"><button data-action="stage" data-v="${s.k}" ${i === si ? 'aria-current="step"' : ""} title="Mover para esta etapa">
-        <span class="node"><span class="dotn"></span><span class="ln"></span></span>${esc(s.l)}${since && i <= si ? `<span class="sd">${fmtDate(since)}</span>` : ""}</button></li>`;
+      const isPend = i < si && pendSet.has(s.k);
+      const cls = isPend ? "pend" : i < si ? "done" : i === si ? "cur" : "";
+      return `<li class="step ${cls}"><button data-action="stage" data-v="${s.k}" ${i === si ? 'aria-current="step"' : ""} title="${i === si ? "Etapa atual" : "Abrir opções desta etapa"}">
+        <span class="node"><span class="dotn"></span><span class="ln"></span></span>${esc(s.l)}${isPend ? `<span class="pl">Pendente</span>` : ""}${since && i <= si ? `<span class="sd">${fmtDate(since)}</span>` : ""}</button></li>`;
     }).join("");
+    const pendNow = pendingStages(p);
+    let panel = "";
+    if (state.stagePanel && state.stagePanel !== stageKey(p)) {
+      const st = stages(p); const ti = st.findIndex((s) => s.k === state.stagePanel);
+      if (ti > si) {
+        const rows = st.slice(si, ti).map((s) => {
+          const v = pendSet.has(s.k) ? "pend" : "ok";
+          return `<div class="sp-row" data-k="${s.k}"><span>${esc(s.l)}</span><div class="seg" role="group" aria-label="${esc(s.l)}">
+            <button type="button" data-action="sp-mark" data-v="ok" aria-pressed="${v === "ok"}">Concluída</button>
+            <button type="button" data-action="sp-mark" data-v="pend" aria-pressed="${v === "pend"}">Pendente</button></div></div>`;
+        }).join("");
+        panel = `<div class="stage-panel"><div class="sp-q">Avançar para <b>${esc(st[ti].l)}</b>. Como ficaram as etapas anteriores?</div>${rows}
+          <div class="row-end" style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap"><button class="btn ghost" data-action="sp-cancel">Cancelar</button><button class="btn primary" data-action="sp-advance" data-v="${st[ti].k}">Avançar</button></div></div>`;
+      } else if (ti >= 0) {
+        const isPend = pendSet.has(st[ti].k);
+        panel = `<div class="stage-panel"><div class="sp-q"><b>${esc(st[ti].l)}</b> — ${isPend ? "pendente" : "concluída"}</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            ${isPend ? `<button class="btn primary" data-action="stage-done" data-v="${st[ti].k}">Marcar como concluída</button>` : `<button class="btn" data-action="stage-pend" data-v="${st[ti].k}">Marcar como pendente</button>`}
+            <button class="btn" data-action="sp-back" data-v="${st[ti].k}">Voltar o projeto para esta etapa</button>
+            <button class="btn ghost" data-action="sp-cancel">Fechar</button></div></div>`;
+      }
+    }
     const curSince = stageSince(p, stageKey(p));
     const subTxt = subline(p) + (p.tipo === "homologacao" && p.contatoTel ? " · " + p.contatoTel : "");
 
@@ -962,9 +1027,11 @@ details.fold[open] > summary { margin-bottom: 10px; }
       </div>
 
       <section class="sec">
-        <div class="sec-h"><h2>Jornada</h2><span class="aside">Clique numa etapa para avançar. A mudança fica registrada no histórico.</span></div>
+        <div class="sec-h"><h2>Jornada</h2><span class="aside">Clique numa etapa para avançar ou marcar como pendente. Tudo fica registrado no histórico.</span></div>
         <div class="journey"><ol class="steps">${steps}</ol></div>
         <div class="since">Etapa atual: <b>${esc(stageLabel(p))}</b>${curSince ? ` desde ${fmtDate(curSince)}` : ""}</div>
+        ${pendNow.length ? `<div class="pend-list"><b>Pendente:</b>${pendNow.map((s) => `<span>${esc(s.l)}</span><button class="btn sm" data-action="stage-done" data-v="${s.k}">Concluir</button>`).join("")}</div>` : ""}
+        ${panel}
       </section>
 
       <div class="dtabs" role="tablist" aria-label="Seções do projeto">
@@ -1045,7 +1112,8 @@ details.fold[open] > summary { margin-bottom: 10px; }
     const c = counts(p);
     const L = [];
     L.push(`${(KIND[p.tipo] || {}).l || "Projeto"}: ${p.titulo || "Sem nome"}`.toUpperCase());
-    L.push(`Etapa: ${stageLabel(p)} | Status: ${statusLabel(p.status)} | Prioridade: ${(PRIOR.find((x) => x.v === p.prioridade) || PRIOR[1]).l}`);
+    const pr = pendingStages(p);
+    L.push(`Etapa: ${stageLabel(p)}${pr.length ? " (pendente: " + pr.map((s) => s.l).join(", ") + ")" : ""} | Status: ${statusLabel(p.status)} | Prioridade: ${(PRIOR.find((x) => x.v === p.prioridade) || PRIOR[1]).l}`);
     L.push("");
     (FIELDS[p.tipo] || []).forEach((f) => { if (p[f.k]) L.push(`${f.l}: ${f.t === "date" ? fmtDate(p[f.k]) : p[f.k]}`); });
     const nt = nextOf(p);
@@ -1076,10 +1144,10 @@ details.fold[open] > summary { margin-bottom: 10px; }
   }
 
   /* ---------- Events ---------- */
-  const WRITE_ACTIONS = new Set(["new", "nf-create", "del-ask", "del-yes", "ck-set", "ck-del", "ck-template", "ck-add", "log-add", "log-del", "stage", "next-save", "next-drop", "complete-start", "complete-save"]);
+  const WRITE_ACTIONS = new Set(["new", "nf-create", "del-ask", "del-yes", "ck-set", "ck-del", "ck-template", "ck-add", "log-add", "log-del", "stage", "sp-advance", "sp-back", "stage-done", "stage-pend", "next-save", "next-drop", "complete-start", "complete-save"]);
 
   function selectProject(pid, tab) {
-    state.selectedId = pid; state.view = "projetos"; state.confirmDelete = false; state.completing = false;
+    state.selectedId = pid; state.view = "projetos"; state.confirmDelete = false; state.completing = false; state.stagePanel = null;
     state.openNotes.clear(); state.tab = tab || "proximo";
     renderView(); renderList(); renderDetail(); window.scrollTo(0, 0);
   }
@@ -1169,7 +1237,21 @@ details.fold[open] > summary { margin-bottom: 10px; }
       renderSummary(); renderList(); renderDetail(); toast("Projeto excluído.");
       return;
     }
-    if (a === "stage") { setStage(id, b.dataset.v); return; }
+    if (a === "stage") {
+      if (b.dataset.v === stageKey(p)) { state.stagePanel = null; renderDetail(); return; }
+      state.stagePanel = state.stagePanel === b.dataset.v ? null : b.dataset.v; renderDetail(); return;
+    }
+    if (a === "sp-mark") { b.parentElement.querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", String(x === b))); return; }
+    if (a === "sp-cancel") { state.stagePanel = null; renderDetail(); return; }
+    if (a === "sp-advance") {
+      const marks = {};
+      document.querySelectorAll(".stage-panel .sp-row").forEach((r) => { const on = r.querySelector('[aria-pressed="true"]'); marks[r.dataset.k] = on ? on.dataset.v : "ok"; });
+      setStage(id, b.dataset.v, marks);
+      return;
+    }
+    if (a === "sp-back") { setStage(id, b.dataset.v, {}); return; }
+    if (a === "stage-done") { setPending(id, b.dataset.v, false); return; }
+    if (a === "stage-pend") { setPending(id, b.dataset.v, true); return; }
 
     if (a === "next-save") {
       const n = readSched("ns"); if (!n) return;

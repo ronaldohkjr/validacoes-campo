@@ -13,7 +13,7 @@ Entre com sua conta do claude.ai. Para ver ou editar, a pessoa precisa ter sido 
 
 ## O que o app faz
 
-- **Jornada** por etapas (Primeiro contato → Visita agendada → Instalação → Homologação → Entrega → Acompanhamento → Encerrado; a validação de engenharia tem etapas próprias), com data de cada mudança.
+- **Jornada** por etapas (Primeiro contato → Visita agendada → Instalação → Homologação → Entrega e treinamento → Acompanhamento em campo → Acompanhamento pós-entrega → Encerrado; a validação de engenharia tem etapas próprias), com data de cada mudança. Uma etapa pode ficar **pendente** mesmo com o projeto já mais à frente, e ser concluída depois.
 - **Um próximo passo por vez** (ex.: "entrar em contato daqui 7 dias"): ao concluir, você registra como foi e já agenda o próximo (7, 15, 30, 60, 90 dias ou outra data).
 - **Agenda**: o próximo passo de cada projeto, separado em atrasados, hoje, próximos 7 dias e mais adiante, além dos projetos sem próximo passo.
 - **Abas separadas** em cada projeto: Próximo passo, Histórico, Checklist e Dados.
@@ -35,7 +35,7 @@ O app é um único arquivo HTML:
 
 Cada projeto é um documento na coleção `projects`, com os campos do tipo de projeto, mais:
 
-- `etapa`, `etapasHist[]`: etapa atual e histórico de mudanças
+- `etapa`, `etapasHist[]`, `etapasPend[]`: etapa atual, histórico de mudanças e etapas que ficaram pendentes
 - `proximo`: `{texto, tipo: "contato" | "visita" | "tarefa", prazo, criado, autor}` ou `null`
 - `diario[]`: `{data, tipo, texto, autor}`
 - `checklist[]`: `{grupo, texto, status: "pendente" | "ok" | "falha" | "na", nota}`
