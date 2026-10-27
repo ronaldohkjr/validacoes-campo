@@ -5,6 +5,12 @@ App para o supervisor de validação de campo controlar a jornada do cliente e o
 - **Homologação em cliente**: instalação e homologação dos nossos produtos nas máquinas novas dos clientes.
 - **Validação de engenharia**: testes e checklist de versões novas de software/firmware e de hardware novo.
 
+## Acessar a plataforma
+
+**https://claude.ai/artifact/Dm7zbat1JVLh5LCTWKqFov**
+
+Entre com sua conta do claude.ai. Para ver ou editar, a pessoa precisa ter sido convidada pelo responsável (botão Compartilhar na página).
+
 ## O que o app faz
 
 - **Jornada** por etapas (Primeiro contato → Visita agendada → Instalação → Homologação → Entrega → Acompanhamento → Encerrado; a validação de engenharia tem etapas próprias), com data de cada mudança.
@@ -19,7 +25,7 @@ App para o supervisor de validação de campo controlar a jornada do cliente e o
 
 O app é um único arquivo: `index.html`.
 
-- **Versão em uso (com dados na nuvem e acesso da equipe):** publicada como Artifact no claude.ai. Lá os dados ficam salvos num banco compartilhado e cada registro mostra quem fez.
+- **Versão em uso (com dados na nuvem e acesso da equipe):** https://claude.ai/artifact/Dm7zbat1JVLh5LCTWKqFov. Lá os dados ficam salvos num banco compartilhado e cada registro mostra quem fez.
 - **Abrindo o `index.html` direto no navegador:** funciona em *modo local*, e os dados ficam salvos só naquele navegador (localStorage).
 
 ## Estrutura dos dados
