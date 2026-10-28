@@ -105,7 +105,56 @@ button.stat:hover { background: var(--raised); }
 .stat.info .n { color: var(--info); }
 
 /* Main split */
-.main { display: grid; grid-template-columns: minmax(300px, 400px) minmax(0, 1fr); gap: 14px; align-items: start; }
+.main { display: block; }
+.app.show-detail #home, .app.show-detail .strip { display: none; }
+.app:not(.show-detail) .detail-panel { display: none; }
+.detail-panel { max-width: 1040px; margin: 0 auto; }
+
+/* Home: toolbar, cards, board */
+.home { display: flex; flex-direction: column; gap: 14px; }
+.toolbar { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.toolbar .seg { flex: 0 0 auto; }
+.toolbar #f-status { flex: 1 1 160px; max-width: 220px; width: auto; }
+.toolbar #f-q { flex: 1 1 220px; width: auto; }
+.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 14px; }
+.card { display: flex; flex-direction: column; text-align: left; padding: 0; border: 1px solid var(--line); background: var(--surface); border-radius: 10px; overflow: hidden; min-width: 0; transition: transform .15s ease, border-color .15s ease, box-shadow .15s ease; }
+.card:hover { transform: translateY(-2px); border-color: var(--muted); box-shadow: 0 8px 20px -14px var(--ink); }
+.cover { position: relative; aspect-ratio: 16 / 9; max-width: 100%; background: repeating-linear-gradient(104deg, var(--accent-soft) 0 12px, var(--surface) 12px 24px); display: flex; align-items: flex-end; overflow: hidden; }
+.cover img, .d-cover img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.cover .ph { position: relative; padding: 10px 12px; font-family: var(--f-display); font-weight: 700; font-size: 22px; text-transform: uppercase; color: var(--accent); line-height: 1; letter-spacing: .02em; overflow-wrap: anywhere; }
+.cover .badges { position: absolute; top: 8px; left: 8px; right: 8px; display: flex; justify-content: space-between; align-items: flex-start; gap: 6px; }
+.card-body { padding: 12px 14px 14px; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.card h3 { margin: 0; font-size: 16px; font-weight: 600; line-height: 1.25; overflow-wrap: anywhere; }
+.card .sub { font-size: 12.5px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sbar { display: flex; gap: 3px; margin-top: 4px; }
+.sbar i { flex: 1; height: 6px; border-radius: 2px; background: var(--line); }
+.sbar i.on { background: var(--accent); }
+.sbar i.cur { background: var(--accent); outline: 2px solid var(--accent-soft); }
+.sbar i.pend { background: var(--pend); }
+.sl { font-size: 12.5px; display: flex; gap: 6px; flex-wrap: wrap; align-items: baseline; }
+.sl b { font-weight: 600; }
+.sl .n { color: var(--muted); font-family: var(--f-mono); font-size: 11.5px; }
+.card .nx { font-size: 12.5px; color: var(--muted); border-top: 1px dashed var(--line); padding-top: 8px; margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.card .nx b { color: var(--ink); font-weight: 500; }
+.board-group { display: flex; flex-direction: column; gap: 8px; }
+.board-group h2 { font-family: var(--f-display); font-size: 18px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; margin: 0; }
+.board { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(210px, 1fr); gap: 10px; overflow-x: auto; padding-bottom: 6px; }
+.col { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; display: flex; flex-direction: column; min-height: 120px; min-width: 0; }
+.col-h { padding: 8px 10px; font-size: 11.5px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; gap: 6px; }
+.col-h .ct { font-family: var(--f-mono); }
+.col.has .col-h { color: var(--ink); }
+.col-b { padding: 8px; display: flex; flex-direction: column; gap: 8px; }
+.mcard { display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 8px; align-items: center; text-align: left; border: 1px solid var(--line); background: var(--raised); border-radius: 6px; padding: 6px; width: 100%; }
+.mcard:hover { border-color: var(--accent); }
+.mcard .th { width: 44px; height: 44px; border-radius: 4px; overflow: hidden; background: repeating-linear-gradient(104deg, var(--accent-soft) 0 6px, var(--surface) 6px 12px); position: relative; }
+.mcard .th img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.mcard b { display: block; font-size: 13px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mcard span { display: block; font-size: 11.5px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.col-empty { font-size: 12px; color: var(--muted); text-align: center; padding: 10px 0; }
+.d-cover { position: relative; aspect-ratio: 4 / 1; max-height: 240px; width: 100%; max-width: 100%; border-radius: 8px; overflow: hidden; background: repeating-linear-gradient(104deg, var(--accent-soft) 0 14px, var(--surface) 14px 28px); border: 1px solid var(--line); }
+.d-cover.none { aspect-ratio: auto; min-height: 56px; }
+.d-cover .cv-actions { position: absolute; right: 10px; bottom: 10px; display: flex; gap: 6px; flex-wrap: wrap; }
+.d-cover.none .cv-actions { position: static; padding: 12px; justify-content: center; }
 .panel { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; min-width: 0; }
 
 /* List */
@@ -148,7 +197,7 @@ button.stat:hover { background: var(--raised); }
 .empty strong { color: var(--ink); font-size: 15px; }
 
 /* New project form */
-.newform { padding: 12px; border-bottom: 1px solid var(--line); display: flex; flex-direction: column; gap: 8px; background: var(--raised); }
+.newform { padding: 14px; display: flex; flex-direction: column; gap: 8px; background: var(--raised); max-width: 560px; }
 .newform label { font-size: 12px; color: var(--muted); }
 
 /* Detail */
@@ -156,7 +205,7 @@ button.stat:hover { background: var(--raised); }
 .d-head { display: flex; flex-direction: column; gap: 10px; }
 .d-top { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .d-top .spacer { flex: 1; }
-.back { display: none; }
+.back { display: inline-flex; }
 fieldset.fs { border: 0; padding: 0; margin: 0; min-width: 0; display: flex; flex-direction: column; gap: 26px; }
 .d-head2 { display: flex; flex-direction: column; gap: 8px; margin-top: -12px; }
 .title-in { font-family: var(--f-display); font-weight: 600; font-size: 28px; line-height: 1.1; border: 1px solid transparent; background: transparent; border-radius: 6px; padding: 2px 6px; margin-left: -7px; width: 100%; }
@@ -316,7 +365,7 @@ details.fold[open] > summary { margin-bottom: 10px; }
 .placeholder { padding: 48px 24px; text-align: center; color: var(--muted); display: flex; flex-direction: column; gap: 8px; align-items: center; }
 .placeholder strong { color: var(--ink); font-family: var(--f-display); font-size: 22px; font-weight: 600; }
 
-.app.ro [data-action="new"], .app.ro .add-row, .app.ro .log-add, .app.ro .box, .app.ro .nc-actions, .app.ro .suggest,
+.app.ro [data-action="new"], .app.ro .cv-actions, .app.ro .add-row, .app.ro .log-add, .app.ro .box, .app.ro .nc-actions, .app.ro .suggest,
 .app.ro [data-action="ck-del"], .app.ro [data-action="log-del"], .app.ro [data-action="del-ask"], .app.ro [data-action="ck-template"], .app.ro [data-action="agenda-sched"] { display: none; }
 
 /* Agenda rows */
@@ -347,11 +396,9 @@ details.fold[open] > summary { margin-bottom: 10px; }
   .strip { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .stat:nth-child(4) { border-left: 0; }
   .stat:nth-child(n+4) { border-top: 1px solid var(--line); }
-  .main { grid-template-columns: minmax(0, 1fr); }
-  .items { max-height: none; }
-  .app.show-detail .list-panel, .app.show-detail .strip { display: none; }
-  .app:not(.show-detail) .detail-panel { display: none; }
-  .back { display: inline-flex; }
+  .d-cover { aspect-ratio: 16 / 7; }
+  .cover { aspect-ratio: 2 / 1; }
+  .toolbar #f-status { max-width: none; }
   .log-add { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
   .log-add textarea { grid-column: 1 / -1; }
 }
@@ -387,8 +434,8 @@ details.fold[open] > summary { margin-bottom: 10px; }
   <div class="banner" id="banner" hidden></div>
   <section class="strip" id="strip" aria-label="Resumo"></section>
   <div class="main" id="main">
-    <aside class="panel list-panel">
-      <div class="newform" id="newform" hidden>
+    <section class="home" id="home">
+      <div class="panel newform" id="newform" hidden>
         <label for="nf-tipo">Tipo de projeto</label>
         <div class="seg" id="nf-tipo" role="group">
           <button type="button" data-action="nf-tipo" data-v="homologacao" aria-pressed="true">Homologação em cliente</button>
@@ -401,19 +448,21 @@ details.fold[open] > summary { margin-bottom: 10px; }
           <button class="btn primary" data-action="nf-create">Criar projeto</button>
         </div>
       </div>
-      <div class="list-head">
+      <div class="toolbar">
         <div class="seg" role="group" aria-label="Tipo">
           <button data-action="f-tipo" data-v="todos" aria-pressed="true">Todos</button>
           <button data-action="f-tipo" data-v="homologacao" aria-pressed="false">Homologação</button>
           <button data-action="f-tipo" data-v="validacao" aria-pressed="false">Validação</button>
         </div>
-        <div class="row2">
-          <select class="field-in" id="f-status" aria-label="Status"></select>
-          <input class="field-in" id="f-q" type="search" placeholder="Buscar cliente, máquina, versão…" aria-label="Buscar">
+        <select class="field-in" id="f-status" aria-label="Status"></select>
+        <input class="field-in" id="f-q" type="search" placeholder="Buscar cliente, máquina, versão…" aria-label="Buscar">
+        <div class="seg view-toggle" role="group" aria-label="Visualização">
+          <button data-action="home-view" data-v="cards" aria-pressed="true">Cartões</button>
+          <button data-action="home-view" data-v="board" aria-pressed="false">Por etapa</button>
         </div>
       </div>
-      <div class="items" id="items"></div>
-    </aside>
+      <div id="items"></div>
+    </section>
     <main class="panel detail-panel" id="detail"></main>
   </div>
   <main class="panel" id="agenda" hidden></main>
@@ -587,6 +636,47 @@ details.fold[open] > summary { margin-bottom: 10px; }
     return d[0] || null;
   }
 
+  /* ---------- Cover images ---------- */
+  const coverCache = {}; // ref -> url
+  function coverSrc(ref) { if (!ref) return ""; if (ref.startsWith("data:")) return ref; return coverCache[ref] || ""; }
+  function coverImg(ref) {
+    if (!ref) return "";
+    const src = coverSrc(ref);
+    return src ? `<img src="${esc(src)}" alt="" loading="lazy">` : `<img data-cover="${esc(ref)}" alt="" hidden>`;
+  }
+  async function hydrateCovers() {
+    const els = Array.from(document.querySelectorAll("img[data-cover]"));
+    if (!els.length || !store || !store.coverUrls) return;
+    const refs = Array.from(new Set(els.map((e) => e.dataset.cover).filter((r) => r && !coverCache[r])));
+    if (refs.length) {
+      try { Object.assign(coverCache, await store.coverUrls(refs)); } catch (e) { return; }
+    }
+    els.forEach((e) => { const u = coverCache[e.dataset.cover]; if (u) { e.src = u; e.hidden = false; e.removeAttribute("data-cover"); } });
+  }
+  function resizeImage(file, maxW, quality) {
+    return new Promise((resolve, reject) => {
+      const url = URL.createObjectURL(file);
+      const img = new Image();
+      img.onload = () => {
+        const scale = Math.min(1, maxW / img.naturalWidth);
+        const w = Math.round(img.naturalWidth * scale), h = Math.round(img.naturalHeight * scale);
+        const c = document.createElement("canvas"); c.width = w; c.height = h;
+        c.getContext("2d").drawImage(img, 0, 0, w, h);
+        URL.revokeObjectURL(url);
+        c.toBlob((b) => (b ? resolve(b) : reject(new Error("blob"))), "image/jpeg", quality);
+      };
+      img.onerror = () => { URL.revokeObjectURL(url); reject(new Error("img")); };
+      img.src = url;
+    });
+  }
+  const blobToDataUrl = (b) => new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result); r.onerror = rej; r.readAsDataURL(b); });
+  async function inlineCover(id, file) {
+    // claude.ai / local mode: small image kept inside the project itself
+    let blob = await resizeImage(file, 640, 0.72);
+    if (blob.size > 140000) blob = await resizeImage(file, 480, 0.6);
+    return blobToDataUrl(blob);
+  }
+
   /* ---------- State ---------- */
   const state = {
     projects: new Map(),
@@ -600,6 +690,7 @@ details.fold[open] > summary { margin-bottom: 10px; }
     confirmDelete: false,
     completing: false,
     stagePanel: null,
+    homeView: (function () { try { return localStorage.getItem("vc-home-view") || "cards"; } catch (e) { return "cards"; } })(),
     openNotes: new Set(),
     logTipo: "visita",
     readOnly: false,
@@ -640,6 +731,8 @@ details.fold[open] > summary { margin-bottom: 10px; }
       update(id, patch) { return col.doc(id).update(patch); },
       del(id) { return col.doc(id).delete(); },
       newId() { return col.doc().id; },
+      uploadCover: inlineCover,
+      async removeCover() {},
     };
   }
   function localStore() {
@@ -654,6 +747,8 @@ details.fold[open] > summary { margin-bottom: 10px; }
       update(id, patch) { const o = read(); o[id] = Object.assign(o[id] || {}, patch); write(o); return Promise.resolve(); },
       del(id) { const o = read(); delete o[id]; write(o); return Promise.resolve(); },
       newId() { return rid(); },
+      uploadCover: inlineCover,
+      async removeCover() {},
     };
   }
 
@@ -811,36 +906,66 @@ details.fold[open] > summary { margin-bottom: 10px; }
       });
   }
 
+  function stageBar(p) {
+    const si = stageIdx(p); const pendSet = new Set(p.etapasPend || []);
+    return `<div class="sbar" aria-hidden="true">${stages(p).map((st, i) => `<i class="${i < si && pendSet.has(st.k) ? "pend" : i < si ? "on" : i === si ? "cur" : ""}"></i>`).join("")}</div>`;
+  }
+  function coverPlaceholder(p) {
+    const t = p.tipo === "homologacao" ? [p.maqFabricante, p.maqModelo].filter(Boolean).join(" ") || p.cliente : p.produto || p.versaoSw;
+    return `<span class="ph">${esc(t || (p.titulo || "").split(/[—-]/)[0])}</span>`;
+  }
+  function projectCard(p) {
+    const nt = nextOf(p);
+    const si = stageIdx(p);
+    const nPend = pendingStages(p).length;
+    const c = counts(p);
+    const closed = CLOSED.has(p.status) || stageKey(p) === "encerrado";
+    const nx = nt
+      ? `<div class="nx">→ <b>${esc(nt.texto)}</b> · <span class="mono ${dueClass(nt.prazo)}">${fmtDate(nt.prazo)}</span></div>`
+      : (closed ? `<div class="nx">Projeto encerrado</div>` : `<div class="nx today">Sem próximo passo</div>`);
+    return `<button class="card" data-action="select" data-id="${esc(p.id)}">
+      <div class="cover">${p.capa ? coverImg(p.capa) : coverPlaceholder(p)}
+        <div class="badges"><span class="kind ${p.tipo === "validacao" ? "val" : "hom"}">${KIND[p.tipo] ? KIND[p.tipo].short : "?"}</span><span class="pill st-${esc(p.status)}">${esc(statusLabel(p.status))}</span></div>
+      </div>
+      <div class="card-body">
+        <h3>${esc(p.titulo || "Sem nome")}</h3>
+        <div class="sub">${esc(subline(p))}</div>
+        ${stageBar(p)}
+        <div class="sl"><b>${esc(stageLabel(p))}</b><span class="n">${si + 1}/${stages(p).length}</span>${nPend ? `<span class="today">${nPend} pendente${nPend > 1 ? "s" : ""}</span>` : ""}${c.falha ? `<span class="late">${c.falha} falha${c.falha > 1 ? "s" : ""}</span>` : ""}</div>
+        ${nx}
+      </div>
+    </button>`;
+  }
+  function boardView(rows) {
+    const tipos = state.filter.tipo === "todos" ? ["homologacao", "validacao"] : [state.filter.tipo];
+    return tipos.map((tp) => {
+      const list = rows.filter((p) => p.tipo === tp);
+      if (!list.length && state.filter.tipo === "todos") return "";
+      const cols = JORNADA[tp].map((st) => {
+        const inCol = list.filter((p) => stageKey(p) === st.k);
+        return `<div class="col ${inCol.length ? "has" : ""}"><div class="col-h"><span>${esc(st.l)}</span><span class="ct">${inCol.length}</span></div>
+          <div class="col-b">${inCol.map((p) => {
+            const nt = nextOf(p); const nPend = pendingStages(p).length;
+            return `<button class="mcard" data-action="select" data-id="${esc(p.id)}"><span class="th">${p.capa ? coverImg(p.capa) : ""}</span>
+              <span><b>${esc(p.titulo || "Sem nome")}</b><span>${esc(p.cliente || p.produto || "")}</span>
+              <span class="${nt ? dueClass(nt.prazo) : "today"}">${nt ? "→ " + esc(fmtDate(nt.prazo)) : "Sem próximo passo"}${nPend ? " · " + nPend + " pendente" + (nPend > 1 ? "s" : "") : ""}</span></span></button>`;
+          }).join("") || `<div class="col-empty">—</div>`}</div></div>`;
+      }).join("");
+      return `<section class="board-group"><h2>${esc(KIND[tp].l)}</h2><div class="board">${cols}</div></section>`;
+    }).join("");
+  }
   function renderList() {
     const el = $("#items");
+    document.querySelectorAll('[data-action="home-view"]').forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.v === state.homeView)));
     if (!state.loaded) { el.innerHTML = `<div class="empty">Carregando projetos…</div>`; return; }
     const rows = filtered();
     if (!state.projects.size) {
-      el.innerHTML = `<div class="empty"><strong>Nenhum projeto ainda</strong>Crie uma homologação em cliente ou uma validação de versão/hardware para começar a registrar a jornada.<button class="btn primary" data-action="new">+ Novo projeto</button></div>`;
+      el.innerHTML = `<div class="panel empty"><strong>Nenhum projeto ainda</strong>Crie uma homologação em cliente ou uma validação de versão/hardware para começar a registrar a jornada.<button class="btn primary" data-action="new">+ Novo projeto</button></div>`;
       return;
     }
-    if (!rows.length) { el.innerHTML = `<div class="empty">Nenhum projeto com esses filtros.</div>`; return; }
-    el.innerHTML = rows.map((p) => {
-      const c = counts(p);
-      const nt = nextOf(p);
-      const si = stageIdx(p);
-      const pendSet = new Set(p.etapasPend || []);
-      const mini = stages(p).map((s, i) => `<i class="${i < si && pendSet.has(s.k) ? "pend" : i <= si ? "on" : ""}"></i>`).join("");
-      const nPend = pendingStages(p).length;
-      const closed = CLOSED.has(p.status) || stageKey(p) === "encerrado";
-      const nx = nt
-        ? `<span class="nx">→ <b>${esc(nt.texto)}</b> · <span class="mono ${dueClass(nt.prazo)}">${fmtDate(nt.prazo)}</span></span>`
-        : (closed ? "" : `<span class="nx today">Sem próximo passo</span>`);
-      const fails = c.falha ? `<span class="late">${c.falha} falha${c.falha > 1 ? "s" : ""}</span>` : "";
-      return `<button class="item" data-action="select" data-id="${esc(p.id)}" aria-current="${p.id === state.selectedId}">
-        <span class="kind ${p.tipo === "validacao" ? "val" : "hom"}">${KIND[p.tipo] ? KIND[p.tipo].short : "?"}</span>
-        <span class="tt">${esc(p.titulo || "Sem nome")}</span>
-        <span class="pill st-${esc(p.status)}">${esc(statusLabel(p.status))}</span>
-        <span class="sub">${esc(subline(p))}</span>
-        ${nx}
-        <span class="meta">${p.exemplo ? '<span class="tag-ex">exemplo</span>' : ""}<span class="stage-mini" aria-hidden="true">${mini}</span><span>${esc(stageLabel(p))}</span>${nPend ? `<span class="today">${nPend} etapa${nPend > 1 ? "s" : ""} pendente${nPend > 1 ? "s" : ""}</span>` : ""}${fails}</span>
-      </button>`;
-    }).join("");
+    if (!rows.length) { el.innerHTML = `<div class="panel empty">Nenhum projeto com esses filtros.</div>`; return; }
+    el.innerHTML = state.homeView === "board" ? boardView(rows) : `<div class="cards">${rows.map(projectCard).join("")}</div>`;
+    hydrateCovers();
   }
 
   function schedForm(prefix, p, opts) {
@@ -1026,10 +1151,17 @@ details.fold[open] > summary { margin-bottom: 10px; }
     ];
     const tabBody = state.tab === "historico" ? tabHistorico(p) : state.tab === "checklist" ? tabChecklist(p) : state.tab === "dados" ? tabDados(p) : tabProximo(p, id);
 
+    const coverBlock = `<div class="d-cover ${p.capa ? "" : "none"}">${p.capa ? coverImg(p.capa) : ""}
+        <div class="cv-actions">
+          <input type="file" id="cover-file" accept="image/*" hidden>
+          <button class="btn sm" data-action="cover-pick">${p.capa ? "Trocar capa" : "+ Adicionar imagem de capa"}</button>
+          ${p.capa ? `<button class="btn sm" data-action="cover-remove">Remover</button>` : ""}
+        </div></div>`;
     el.innerHTML = `<div class="detail">
+      ${p.capa || !state.readOnly ? coverBlock : ""}
       <div class="d-head">
         <div class="d-top">
-          <button class="btn sm back" data-action="back">← Lista</button>
+          <button class="btn sm back" data-action="back">← Painel</button>
           <span class="kind ${p.tipo === "validacao" ? "val" : "hom"}">${KIND[p.tipo] ? KIND[p.tipo].short : "?"}</span>
           <span style="color:var(--muted);font-size:13px">${KIND[p.tipo] ? KIND[p.tipo].l : ""}</span>
           ${p.exemplo ? '<span class="tag-ex">exemplo</span>' : ""}
@@ -1065,6 +1197,7 @@ details.fold[open] > summary { margin-bottom: 10px; }
       </fieldset>
     </div>`;
     const jr = el.querySelector(".journey"), cur = el.querySelector(".step.cur");
+    hydrateCovers();
     if (jr && cur && cur.offsetLeft - jr.offsetLeft + cur.offsetWidth > jr.clientWidth) jr.scrollLeft = cur.offsetLeft - jr.offsetLeft - 24;
     hydrateNames();
   }
@@ -1241,6 +1374,7 @@ details.fold[open] > summary { margin-bottom: 10px; }
       changed(nid, [], { now: true, detail: true });
       return;
     }
+    if (a === "home-view") { state.homeView = b.dataset.v; try { localStorage.setItem("vc-home-view", state.homeView); } catch (e) {} renderList(); return; }
     if (a === "f-tipo") { state.filter.tipo = b.dataset.v; renderFilters(); renderList(); return; }
     if (a === "select") { selectProject(b.dataset.id, "proximo"); return; }
     if (a === "back") { state.selectedId = null; renderList(); renderDetail(); return; }
@@ -1249,6 +1383,13 @@ details.fold[open] > summary { margin-bottom: 10px; }
     const p = id && state.projects.get(id);
     if (!p) return;
 
+    if (a === "cover-pick") { const f = $("#cover-file"); if (f) f.click(); return; }
+    if (a === "cover-remove") {
+      const old = p.capa; p.capa = "";
+      changed(id, ["capa"], { now: true, detail: true });
+      if (old) store.removeCover(old).catch(() => {});
+      return;
+    }
     if (a === "tab") { state.tab = b.dataset.v; state.completing = false; renderDetail(); return; }
     if (a === "report") {
       const txt = report(p);
@@ -1260,8 +1401,10 @@ details.fold[open] > summary { margin-bottom: 10px; }
     if (a === "del-no") { state.confirmDelete = false; renderDetail(); return; }
     if (a === "del-yes") {
       const s = saves[id]; if (s) { clearTimeout(s.timer); s.timer = null; s.fields = new Set(); s.isNew = false; }
+      const oldCover = p.capa;
       state.projects.delete(id); state.selectedId = null; state.confirmDelete = false;
       store.del(id).catch(() => toast("Não foi possível excluir. Tente de novo."));
+      if (oldCover) store.removeCover(oldCover).catch(() => {});
       renderSummary(); renderList(); renderDetail(); toast("Projeto excluído.");
       return;
     }
@@ -1363,8 +1506,24 @@ details.fold[open] > summary { margin-bottom: 10px; }
       it.nota = t.value; changed(id, ["checklist"]);
     }
   });
+  async function handleCoverFile(id, file) {
+    if (!file || !/^image\//.test(file.type)) { toast("Escolha um arquivo de imagem (JPG, PNG…)."); return; }
+    const p = state.projects.get(id); if (!p || !store) return;
+    toast("Enviando imagem…");
+    try {
+      const ref = await store.uploadCover(id, file);
+      const old = p.capa;
+      p.capa = ref;
+      changed(id, ["capa"], { now: true, detail: true });
+      if (old && old !== ref) store.removeCover(old).catch(() => {});
+      toast("Capa atualizada.");
+    } catch (e) {
+      toast(e && e.code === "no_bucket" ? "Falta configurar o armazenamento de imagens no Supabase (supabase/002_capas.sql)." : "Não foi possível enviar a imagem. Tente uma imagem menor ou verifique a conexão.");
+    }
+  }
   document.addEventListener("change", (ev) => {
     const t = ev.target;
+    if (t.id === "cover-file") { const id = state.selectedId; if (id && t.files && t.files[0]) handleCoverFile(id, t.files[0]); t.value = ""; return; }
     if (t.id === "f-status") { state.filter.status = t.value; renderList(); return; }
     const id = state.selectedId; const p = id && state.projects.get(id);
     if (!p) return;
@@ -1426,6 +1585,23 @@ details.fold[open] > summary { margin-bottom: 10px; }
         if (data === false) throw { code: "not_found" };
       },
       async del(id) { const { error } = await sb.from("projects").delete().eq("id", id); if (error) throw mapErr(error); },
+      async uploadCover(id, file) {
+        const blob = await resizeImage(file, 1600, 0.82);
+        const path = id + "/" + Date.now() + ".jpg";
+        const { error } = await sb.storage.from("capas").upload(path, blob, { contentType: "image/jpeg", upsert: false });
+        if (error) throw { code: /bucket/i.test(error.message || "") ? "no_bucket" : "upload", message: error.message };
+        return "sb:" + path;
+      },
+      async removeCover(ref) { if (ref && ref.startsWith("sb:")) await sb.storage.from("capas").remove([ref.slice(3)]); },
+      async coverUrls(refs) {
+        const paths = refs.filter((r) => r.startsWith("sb:")).map((r) => r.slice(3));
+        const out = {};
+        if (!paths.length) return out;
+        const { data, error } = await sb.storage.from("capas").createSignedUrls(paths, 6 * 3600);
+        if (error) return out;
+        (data || []).forEach((d) => { if (d.signedUrl) out["sb:" + d.path] = d.signedUrl; });
+        return out;
+      },
       newId() { return (window.crypto && crypto.randomUUID ? crypto.randomUUID().replace(/-/g, "").slice(0, 20) : rid()); },
     };
   }
