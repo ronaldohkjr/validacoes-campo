@@ -690,7 +690,7 @@ details.fold[open] > summary { margin-bottom: 10px; }
     return `Entrar em contato com ${p.contato || p.cliente || "o cliente"} para ver como está`;
   }
   function lastEntry(p) {
-    const d = (p.diario || []).filter((e) => !e.auto).sort((a, b) => (a.data < b.data ? 1 : a.data > b.data ? -1 : 0));
+    const d = (p.diario || []).map((e, i) => Object.assign({ _i: i }, e)).filter((e) => !e.auto).sort((a, b) => (a.data < b.data ? 1 : a.data > b.data ? -1 : b._i - a._i));
     return d[0] || null;
   }
 
@@ -878,6 +878,28 @@ details.fold[open] > summary { margin-bottom: 10px; }
 
   /* ---------- Domain actions ---------- */
   // marks: { stageKey: "ok" | "pend" } for the stages passed over when moving ahead
+  // Going back to the stage right before the last change undoes that change (no extra history line)
+  function undoLastStage(id, k) {
+    const p = state.projects.get(id); if (!p) return false;
+    const hist = p.etapasHist || [];
+    const cur = stageKey(p);
+    if (!hist.length || hist[hist.length - 1].etapa !== cur) return false;
+    const prev = hist.length > 1 ? hist[hist.length - 2].etapa : stages(p)[0].k;
+    if (prev !== k) return false;
+    const curLabel = (stages(p).find((s) => s.k === cur) || {}).l || "";
+    const d = (p.diario || []).slice();
+    for (let i = d.length - 1; i >= 0; i--) {
+      if (d[i].auto && d[i].tipo === "etapa" && (d[i].texto || "").indexOf("Etapa: " + curLabel) === 0) { d.splice(i, 1); break; }
+    }
+    p.diario = d;
+    p.etapasHist = hist.slice(0, -1);
+    p.etapa = k;
+    p.etapasPend = (p.etapasPend || []).filter((x) => x !== k);
+    state.stagePanel = null;
+    changed(id, ["etapa", "etapasPend", "etapasHist", "diario"], { detail: true, now: true });
+    toast("Mudança de etapa desfeita.");
+    return true;
+  }
   function setStage(id, k, marks) {
     const p = state.projects.get(id); if (!p || stageKey(p) === k) return;
     const st = stages(p).find((s) => s.k === k); if (!st) return;
@@ -1087,13 +1109,13 @@ details.fold[open] > summary { margin-bottom: 10px; }
   }
 
   function tabHistorico(p) {
-    const diario = (p.diario || []).slice().sort((a, b) => (a.data < b.data ? 1 : a.data > b.data ? -1 : 0));
+    const diario = (p.diario || []).map((e, i) => Object.assign({ _i: i }, e)).sort((a, b) => (a.data < b.data ? 1 : a.data > b.data ? -1 : b._i - a._i));
     const log = diario.length
       ? diario.map((e) => {
           const tipo = e.tipo || "nota";
           return `<div class="entry ${e.auto ? "auto" : ""}"><span class="when">${esc(fmtDate(e.data))}${e.autor ? `<span class="by" data-uid="${esc(e.autor)}"></span>` : ""}</span>
           <span class="what"><span class="tag ${esc(tipo)}">${esc(LOG_LABEL[tipo] || "Nota")}</span>${esc(e.texto)}</span>
-          ${e.auto ? "<span></span>" : `<button class="icon-btn" data-action="log-del" data-entry="${esc(e.id)}" aria-label="Apagar registro">×</button>`}</div>`;
+          ${e.auto && (e.tipo !== "etapa" || e.texto === "Projeto criado") ? "<span></span>" : `<button class="icon-btn" data-action="log-del" data-entry="${esc(e.id)}" aria-label="Apagar registro" title="Apagar registro">×</button>`}</div>`;
         }).join("")
       : `<div class="entry"><span class="when">—</span><span class="what" style="color:var(--muted)">Nenhum registro ainda. Use “Registrar atividade” para anotar uma visita, ligação ou teste.</span><span></span></div>`;
     return `<div class="hist-head"><p class="hint">Tudo o que já foi feito, do mais recente para o mais antigo.</p><button class="btn primary" data-action="reg-open">+ Registrar atividade</button></div>
@@ -1574,7 +1596,7 @@ details.fold[open] > summary { margin-bottom: 10px; }
       setStage(id, b.dataset.v, marks);
       return;
     }
-    if (a === "sp-back") { setStage(id, b.dataset.v, {}); return; }
+    if (a === "sp-back") { if (!undoLastStage(id, b.dataset.v)) setStage(id, b.dataset.v, {}); return; }
     if (a === "stage-done") { setPending(id, b.dataset.v, false); return; }
     if (a === "stage-pend") { setPending(id, b.dataset.v, true); return; }
 
