@@ -16,7 +16,7 @@ Para configurar o site e cadastrar pessoas, veja [docs/CONFIGURAR.md](docs/CONFI
 ## O que o app faz
 
 - **Jornada** por etapas (Primeiro contato → Visita agendada → Instalação → Homologação → Entrega e treinamento → Acompanhamento em campo → Acompanhamento pós-entrega → Encerrado; a validação de engenharia tem etapas próprias), com data de cada mudança. Uma etapa pode ficar **pendente** mesmo com o projeto já mais à frente, e ser concluída depois.
-- **Um próximo passo por vez** (ex.: "entrar em contato daqui 7 dias"): ao concluir, você registra como foi e já agenda o próximo (7, 15, 30, 60, 90 dias ou outra data).
+- **Um próximo passo por vez** (ex.: "entrar em contato daqui 7 dias"), agendado pelo botão **+ Próximo passo**. Ao concluir, você registra como foi e já agenda o seguinte. A aba Próximo passo mostra o atual e a lista dos já concluídos.
 - **Painel inicial** em cartões, com imagem de capa, etapa da jornada e próximo passo de cada projeto, ou em colunas **por etapa**.
 - **Agenda**: o próximo passo de cada projeto, separado em atrasados, hoje, próximos 7 dias e mais adiante, além dos projetos sem próximo passo.
 - **Abas separadas** em cada projeto: Próximo passo, Histórico, Checklist e Dados.

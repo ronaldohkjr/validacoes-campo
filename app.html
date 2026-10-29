@@ -355,7 +355,7 @@ details.fold[open] > summary { margin-bottom: 10px; }
 .placeholder { padding: 48px 24px; text-align: center; color: var(--muted); display: flex; flex-direction: column; gap: 8px; align-items: center; }
 .placeholder strong { color: var(--ink); font-family: var(--f-display); font-size: 22px; font-weight: 600; }
 
-.app.ro [data-action="new"], .app.ro .cv-actions, .app.ro .reg-btn, .app.ro [data-action="reg-open"], .app.ro .add-row, .app.ro .log-add, .app.ro .box, .app.ro .nc-actions, .app.ro .suggest,
+.app.ro [data-action="new"], .app.ro .cv-actions, .app.ro [data-action="next-open"], .app.ro .reg-btn, .app.ro [data-action="reg-open"], .app.ro .add-row, .app.ro .log-add, .app.ro .box, .app.ro .nc-actions, .app.ro .suggest,
 .app.ro [data-action="ck-del"], .app.ro [data-action="log-del"], .app.ro [data-action="del-ask"], .app.ro [data-action="ck-template"], .app.ro [data-action="agenda-sched"] { display: none; }
 
 /* Agenda rows */
@@ -412,6 +412,15 @@ details.fold[open] > summary { margin-bottom: 10px; }
 .kv dt { color: var(--muted); }
 .kv dd { margin: 0; overflow-wrap: anywhere; }
 .d-side .link { align-self: flex-start; font-size: 12.5px; }
+.side-btns { display: flex; flex-direction: column; gap: 8px; }
+.next-btn { background: var(--raised); border-color: var(--accent); color: var(--accent); font-weight: 600; }
+.next-btn:hover { background: var(--accent-soft); }
+.next-empty strong { font-size: 15px; }
+.sec-sub { font-size: 11.5px; text-transform: uppercase; letter-spacing: .08em; font-weight: 600; color: var(--muted); margin-top: 8px; }
+.entry .what b { font-weight: 600; }
+.entry .res { display: block; color: var(--ink); }
+.entry .due-was { display: block; font-size: 12px; color: var(--muted); font-family: var(--f-mono); }
+.warn-box { background: var(--pend-soft); cursor: default; display: block; }
 .hist-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
 
 /* Register activity dialog */
@@ -748,6 +757,7 @@ details.fold[open] > summary { margin-bottom: 10px; }
     confirmDelete: false,
     stagePanel: null,
     reg: null,
+    nextModal: null,
     jrOpen: null,
     homeView: (function () { try { return localStorage.getItem("vc-home-view") || "cards"; } catch (e) { return "cards"; } })(),
     openNotes: new Set(),
@@ -1052,9 +1062,11 @@ details.fold[open] > summary { margin-bottom: 10px; }
   }
 
   function schedForm(prefix, p, opts) {
-    const tipo = (opts && opts.tipo) || "contato";
+    const init = (opts && opts.initial) || null;
+    const tipo = (init && init.tipo) || (opts && opts.tipo) || "contato";
     const keep = opts && opts.keep;
-    const days = 7;
+    const prazo = (init && init.prazo) || addDays(7);
+    const days = DAY_CHIPS.find((n) => addDays(n) === prazo) || 0;
     return `<div class="sched ${keep ? "off" : ""}" id="${prefix}-sched">
       <input type="hidden" id="${prefix}-tipo" value="${tipo}">
       <input type="hidden" id="${prefix}-none" value="0">
@@ -1062,11 +1074,11 @@ details.fold[open] > summary { margin-bottom: 10px; }
       ${keep ? `<div class="quick"><button type="button" class="chip" data-action="sched-keep" data-prefix="${prefix}" aria-pressed="true">Manter o atual: ${esc(keep.texto)} · ${esc(fmtDate(keep.prazo))}</button><span>ou agende outro:</span></div>` : ""}
       <div class="sched-what" style="display:flex;flex-direction:column;gap:8px">
         <div class="seg" role="group" aria-label="Tipo de passo">${NEXT_TIPOS.map((t) => `<button type="button" data-action="sched-tipo" data-prefix="${prefix}" data-v="${t.v}" aria-pressed="${t.v === tipo}">${t.l}</button>`).join("")}</div>
-        <input class="field-in" id="${prefix}-texto" data-auto="1" value="${esc(defaultNextText(p, tipo))}" placeholder="O que precisa ser feito…" aria-label="O que fazer">
+        <input class="field-in" id="${prefix}-texto" data-auto="${init ? "0" : "1"}" value="${esc(init ? init.texto : defaultNextText(p, tipo))}" placeholder="O que precisa ser feito…" aria-label="O que fazer">
       </div>
       <div class="quick sched-when">Quando:
         ${DAY_CHIPS.map((n) => `<button type="button" class="chip" data-action="sched-days" data-prefix="${prefix}" data-v="${n}" aria-pressed="${!keep && n === days}">${n} dias</button>`).join("")}
-        <input class="field-in mono" type="date" id="${prefix}-prazo" data-prefix="${prefix}" value="${addDays(days)}" aria-label="Data">
+        <input class="field-in mono" type="date" id="${prefix}-prazo" data-prefix="${prefix}" value="${esc(prazo)}" aria-label="Data">
         ${opts && opts.allowNone ? `<button type="button" class="chip" data-action="sched-none" data-prefix="${prefix}" aria-pressed="false">Sem próximo passo</button>` : ""}
       </div>
     </div>`;
@@ -1080,9 +1092,10 @@ details.fold[open] > summary { margin-bottom: 10px; }
   function tabProximo(p) {
     const nt = nextOf(p);
     const tel = p.tipo === "homologacao" && (p.contato || p.contatoTel) ? [p.contato, p.contatoTel].filter(Boolean).join(" · ") : (p.tipo === "validacao" && p.engenharia ? p.engenharia : "");
+    let top;
     if (nt) {
       const dc = dueClass(nt.prazo);
-      return `<div class="next-card ${dc}">
+      top = `<div class="next-card ${dc}">
         <div class="nc-when"><span class="big">${esc(fmtDate(nt.prazo).slice(0, 5))}</span><span class="rel">${esc(relDay(nt.prazo))}</span></div>
         <div class="nc-body">
           <div><span class="tag ${esc(nt.tipo)}">${esc(NEXT_LABEL[nt.tipo] || "Tarefa")}</span></div>
@@ -1092,20 +1105,60 @@ details.fold[open] > summary { margin-bottom: 10px; }
         </div>
         <div class="nc-actions">
           <button class="btn primary" data-action="reg-open" data-conclude="1">Feito — registrar como foi</button>
-          <label for="next-date">Mudar data <input class="field-in mono" type="date" id="next-date" value="${esc(nt.prazo)}"></label>
+          <button class="btn" data-action="next-open" data-edit="1">Editar</button>
           <button class="btn ghost danger" data-action="next-drop">Remover</button>
         </div>
-      </div>
-      <p class="hint">Um passo por vez: quando concluir, você anota como foi e já agenda o próximo.</p>
-      ${lastLine(p)}`;
+      </div>`;
+    } else {
+      const closed = CLOSED.has(p.status) || stageKey(p) === "encerrado";
+      const hint = FOLLOWUP_STAGES.has(stageKey(p)) ? "Projeto em acompanhamento: agende o próximo contato para ver como o cliente está." : closed ? "Projeto encerrado." : "Defina o que precisa ser feito e quando, por exemplo “entrar em contato em 7 dias”.";
+      top = `<div class="box next-empty"><strong>Nenhum próximo passo agendado</strong><p class="hint">${esc(hint)}</p>
+        <div><button class="btn primary" data-action="next-open">+ Agendar próximo passo</button></div></div>`;
     }
-    const suggest = FOLLOWUP_STAGES.has(stageKey(p)) ? `<div class="suggest">Projeto em acompanhamento: agende o próximo contato para ver como o cliente está.</div>` : "";
-    return `${suggest}<div class="box">
-        <h3>Agendar próximo passo</h3>
-        ${schedForm("ns", p, { tipo: "contato" })}
-        <div class="row-end"><button class="btn primary" data-action="next-save">Agendar</button></div>
-      </div>
-      ${lastLine(p)}`;
+    const done = (p.diario || []).map((e, i) => Object.assign({ _i: i }, e)).filter((e) => e.prazoOriginal)
+      .sort((a, b) => (a.data < b.data ? 1 : a.data > b.data ? -1 : b._i - a._i));
+    const doneList = done.length ? `<div class="sec-sub">Passos concluídos</div>
+      <div class="log">${done.map((e) => {
+        const parts = (e.texto || "").split("\n");
+        const first = parts.shift();
+        return `<div class="entry"><span class="when">${esc(fmtDate(e.data))}${e.autor ? `<span class="by" data-uid="${esc(e.autor)}"></span>` : ""}</span>
+          <span class="what"><span class="tag feito">Feito</span><b>${esc(first)}</b>${parts.length ? `<span class="res">${esc(parts.join("\n"))}</span>` : ""}<span class="due-was">previsto para ${esc(fmtDate(e.prazoOriginal))}</span></span><span></span></div>`;
+      }).join("")}</div>` : "";
+    return `${top}<p class="hint">Um passo por vez: quando concluir, você anota como foi e já agenda o próximo.</p>${doneList}`;
+  }
+
+  /* ---------- Next step dialog ---------- */
+  function openNext(edit) {
+    const p = state.projects.get(state.selectedId); if (!p) return;
+    if (state.reg) closeRegister();
+    const nt = nextOf(p);
+    const ed = !!(edit && nt);
+    state.nextModal = { edit: ed };
+    const init = ed ? nt : null;
+    const tipo = (init && init.tipo) || "contato";
+    const prazo = (init && init.prazo) || addDays(7);
+    const days = DAY_CHIPS.find((n) => addDays(n) === prazo) || 0;
+    const m = $("#modal");
+    m.innerHTML = `<div class="modal-bg" data-action="reg-bg">
+      <div class="modal" role="dialog" aria-modal="true" aria-labelledby="np-h">
+        <div class="modal-h"><div><h2 id="np-h">${ed ? "Editar próximo passo" : "Próximo passo"}</h2><div class="hint">${esc(p.titulo || "Sem nome")}</div></div><button class="icon-btn" data-action="reg-close" aria-label="Fechar">✕</button></div>
+        ${nt && !ed ? `<div class="conclude warn-box">Isso substitui o próximo passo atual: <b>${esc(nt.texto)}</b> <span class="mono">(${esc(fmtDate(nt.prazo))})</span>. Se ele já foi feito, use “Registrar atividade” para anotar como foi.</div>` : ""}
+        <div class="sched" id="np-sched">
+          <input type="hidden" id="np-tipo" value="${tipo}">
+          <input type="hidden" id="np-none" value="0">
+          <div class="q"><span class="qn">1</span>O que precisa ser feito?</div>
+          <div class="seg" role="group" aria-label="Tipo de passo">${NEXT_TIPOS.map((t) => `<button type="button" data-action="sched-tipo" data-prefix="np" data-v="${t.v}" aria-pressed="${t.v === tipo}">${t.l}</button>`).join("")}</div>
+          <input class="field-in" id="np-texto" data-auto="${init ? "0" : "1"}" value="${esc(init ? init.texto : defaultNextText(p, tipo))}" placeholder="O que precisa ser feito…" aria-label="O que fazer">
+          <div class="q"><span class="qn">2</span>Quando?</div>
+          <div class="quick sched-when">
+            ${DAY_CHIPS.map((n) => `<button type="button" class="chip" data-action="sched-days" data-prefix="np" data-v="${n}" aria-pressed="${n === days}">${n} dias</button>`).join("")}
+            <input class="field-in mono" type="date" id="np-prazo" data-prefix="np" value="${esc(prazo)}" aria-label="Data">
+          </div>
+        </div>
+        <div class="modal-f"><button class="btn ghost" data-action="reg-close">Cancelar</button><button class="btn primary" data-action="next-save">${ed ? "Salvar" : "Agendar"}</button></div>
+      </div></div>`;
+    m.hidden = false;
+    setTimeout(() => { const t = $("#np-texto"); if (t) { t.focus(); t.select(); } }, 0);
   }
 
   function tabHistorico(p) {
@@ -1271,7 +1324,10 @@ details.fold[open] > summary { margin-bottom: 10px; }
       </fieldset>
       <div class="d-grid">
         <aside class="d-side">
-          <button class="btn primary reg-btn" data-action="reg-open">+ Registrar atividade</button>
+          <div class="side-btns">
+            <button class="btn primary reg-btn" data-action="reg-open">+ Registrar atividade</button>
+            <button class="btn reg-btn next-btn" data-action="next-open">+ Próximo passo</button>
+          </div>
           ${journeySide(p)}
           ${contactSide(p)}
         </aside>
@@ -1310,7 +1366,7 @@ details.fold[open] > summary { margin-bottom: 10px; }
     if (d) state.reg.data = d.value || todayISO();
     if (t) state.reg.texto = t.value;
   }
-  function closeRegister() { state.reg = null; const m = $("#modal"); m.hidden = true; m.innerHTML = ""; }
+  function closeRegister() { state.reg = null; state.nextModal = null; const m = $("#modal"); m.hidden = true; m.innerHTML = ""; }
   function renderRegister() {
     const m = $("#modal");
     const p = state.projects.get(state.selectedId);
@@ -1457,10 +1513,10 @@ details.fold[open] > summary { margin-bottom: 10px; }
   }
 
   /* ---------- Events ---------- */
-  const WRITE_ACTIONS = new Set(["new", "nf-create", "del-ask", "del-yes", "ck-set", "ck-del", "ck-template", "ck-add", "log-del", "reg-open", "reg-save", "stage", "sp-advance", "sp-back", "stage-done", "stage-pend", "next-save", "next-drop"]);
+  const WRITE_ACTIONS = new Set(["new", "nf-create", "del-ask", "del-yes", "ck-set", "ck-del", "ck-template", "ck-add", "log-del", "reg-open", "reg-save", "next-open", "stage", "sp-advance", "sp-back", "stage-done", "stage-pend", "next-save", "next-drop"]);
 
   function selectProject(pid, tab) {
-    if (state.reg) closeRegister();
+    if (state.reg || state.nextModal) closeRegister();
     state.selectedId = pid; state.view = "projetos"; state.confirmDelete = false; state.stagePanel = null;
     state.openNotes.clear(); state.tab = tab || "proximo";
     renderView(); renderList(); renderDetail(); window.scrollTo(0, 0);
@@ -1553,7 +1609,7 @@ details.fold[open] > summary { margin-bottom: 10px; }
     if (a === "home-view") { state.homeView = b.dataset.v; try { localStorage.setItem("vc-home-view", state.homeView); } catch (e) {} renderList(); return; }
     if (a === "f-tipo") { state.filter.tipo = b.dataset.v; renderFilters(); renderList(); return; }
     if (a === "select") { selectProject(b.dataset.id, "proximo"); return; }
-    if (a === "back") { if (state.reg) closeRegister(); state.selectedId = null; renderList(); renderDetail(); return; }
+    if (a === "back") { if (state.reg || state.nextModal) closeRegister(); state.selectedId = null; renderList(); renderDetail(); return; }
 
     const id = state.selectedId;
     const p = id && state.projects.get(id);
@@ -1600,11 +1656,16 @@ details.fold[open] > summary { margin-bottom: 10px; }
     if (a === "stage-done") { setPending(id, b.dataset.v, false); return; }
     if (a === "stage-pend") { setPending(id, b.dataset.v, true); return; }
 
+    if (a === "next-open") { openNext(b.dataset.edit === "1"); return; }
     if (a === "next-save") {
-      const n = readSched("ns"); if (!n) return;
+      const n = readSched("np"); if (!n) return;
+      const ed = state.nextModal && state.nextModal.edit && nextOf(p);
+      if (ed) { n.id = ed.id; n.criado = ed.criado; n.autor = ed.autor || n.autor; }
       p.proximo = n;
+      closeRegister();
+      state.tab = "proximo";
       changed(id, ["proximo"], { detail: true, now: true });
-      toast(`Agendado para ${fmtDate(n.prazo)}.`);
+      toast(ed ? "Próximo passo atualizado." : `Próximo passo agendado para ${fmtDate(n.prazo)}.`);
       return;
     }
     if (a === "next-drop") { p.proximo = null; changed(id, ["proximo"], { detail: true, now: true }); return; }
@@ -1691,12 +1752,12 @@ details.fold[open] > summary { margin-bottom: 10px; }
     }
   });
   document.addEventListener("keydown", (ev) => {
-    if (ev.key === "Escape" && state.reg) { closeRegister(); return; }
+    if (ev.key === "Escape" && (state.reg || state.nextModal)) { closeRegister(); return; }
     if (ev.key !== "Enter") return;
     const t = ev.target;
     const id = state.selectedId; const p = id && state.projects.get(id);
     if (t.id === "ck-new") { ev.preventDefault(); if (p) addItem(p, id); }
-    if (t.id === "ns-texto") { ev.preventDefault(); const bt = document.querySelector('[data-action="next-save"]'); bt && bt.click(); }
+    if (t.id === "np-texto") { ev.preventDefault(); const bt = document.querySelector('[data-action="next-save"]'); bt && bt.click(); }
     if (t.id === "nf-titulo") { ev.preventDefault(); document.querySelector('[data-action="nf-create"]').click(); }
   });
   document.addEventListener("focusout", () => {
