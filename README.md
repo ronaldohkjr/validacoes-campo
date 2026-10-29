@@ -21,7 +21,8 @@ Para configurar o site e cadastrar pessoas, veja [docs/CONFIGURAR.md](docs/CONFI
 - **Agenda**: o próximo passo de cada projeto, separado em atrasados, hoje, próximos 7 dias e mais adiante, além dos projetos sem próximo passo.
 - **Abas separadas** em cada projeto: Próximo passo, Histórico, Checklist e Dados.
 - **Registrar atividade**: um formulário único, em 4 passos (o que fez, quando, como foi, próximo passo), para visitas, ligações, mensagens, testes e anotações.
-- **Histórico**: tudo o que foi registrado, com data e autor.
+- **Fotos e arquivos**: anexe fotos, PDFs, planilhas ou logs ao registrar uma atividade ou agendar um próximo passo (até 25 MB cada).
+- **Histórico**: tudo o que foi registrado, com data, autor e anexos.
 - **Jornada na lateral** da tela do projeto, sempre visível ao lado das abas.
 - **Checklist técnico** com OK / Falha / N.A. e observações, a partir de modelos padrão.
 - **Relatório** em texto para colar em e-mail ou Teams.

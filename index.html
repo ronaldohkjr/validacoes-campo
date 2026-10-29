@@ -431,6 +431,22 @@ details.fold[open] > summary { margin-bottom: 10px; }
 .entry .res { display: block; color: var(--ink); }
 .entry .due-was { display: block; font-size: 12px; color: var(--muted); font-family: var(--f-mono); }
 .warn-box { background: var(--pend-soft); cursor: default; display: block; }
+.opt { font-weight: 400; color: var(--muted); font-size: 12.5px; }
+.att-pick { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.att-pending { display: flex; flex-direction: column; gap: 6px; }
+.att-pending:empty { display: none; }
+.att-row { display: grid; grid-template-columns: 40px minmax(0, 1fr) auto auto; gap: 10px; align-items: center; border: 1px solid var(--line); background: var(--raised); border-radius: 6px; padding: 4px 6px; }
+.att-row img, .att-row .ext { width: 40px; height: 40px; border-radius: 4px; object-fit: cover; display: grid; place-items: center; }
+.att-row .nm, .att-file .nm { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; }
+.att-row .sz, .att-file .sz { font-size: 11.5px; color: var(--muted); font-family: var(--f-mono); white-space: nowrap; }
+.ext { background: var(--info-soft); color: var(--info); font-family: var(--f-mono); font-size: 10px; font-weight: 600; letter-spacing: .03em; border-radius: 4px; padding: 0 4px; }
+.atts { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 6px; margin-top: 6px; white-space: normal; }
+.att-img { display: block; width: 72px; height: 72px; border-radius: 6px; overflow: hidden; border: 1px solid var(--line); background: var(--na-soft); }
+.att-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.att-img:hover { border-color: var(--accent); }
+.att-file { display: inline-grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 6px; align-items: center; max-width: 260px; border: 1px solid var(--line); background: var(--raised); border-radius: 6px; padding: 5px 8px; color: var(--ink); text-decoration: none; }
+.att-file:hover { border-color: var(--accent); }
+.att-file .ext { height: 22px; display: grid; place-items: center; min-width: 30px; }
 .hist-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
 
 /* Register activity dialog */
@@ -754,6 +770,82 @@ details.fold[open] > summary { margin-bottom: 10px; }
     return blobToDataUrl(blob);
   }
 
+  /* ---------- Attachments (photos and files on activities and next steps) ---------- */
+  const MAX_FILE = 25 * 1024 * 1024;
+  const isImgType = (t) => /^image\/(jpeg|png|webp|heic|heif)$/i.test(t || "");
+  const fmtSize = (n) => n >= 1048576 ? (n / 1048576).toFixed(1).replace(".", ",") + " MB" : Math.max(1, Math.round(n / 1024)) + " KB";
+  const extOf = (name) => { const m = /\.([a-z0-9]{1,5})$/i.exec(name || ""); return m ? m[1].toUpperCase() : "ARQ"; };
+  const safeName = (name) => (name || "arquivo").normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^A-Za-z0-9._-]+/g, "_").slice(-80);
+  function fileSrc(ref) { if (!ref) return ""; if (ref.startsWith("data:")) return ref; return coverCache[ref] || ""; }
+  function attHtml(list) {
+    if (!list || !list.length) return "";
+    return `<span class="atts">${list.map((f) => {
+      const src = fileSrc(f.ref);
+      const linkAttr = f.ref.startsWith("data:") ? "" : (src ? `href="${esc(src)}"` : `data-file="${esc(f.ref)}"`);
+      if (f.img) return `<a class="att-img" ${linkAttr} target="_blank" rel="noopener" title="${esc(f.nome)}"><img ${src ? `src="${esc(src)}"` : `data-file-img="${esc(f.ref)}"`} alt="${esc(f.nome)}" loading="lazy"></a>`;
+      return `<a class="att-file" ${linkAttr} target="_blank" rel="noopener" title="Abrir ${esc(f.nome)}"><span class="ext">${esc(extOf(f.nome))}</span><span class="nm">${esc(f.nome)}</span><span class="sz">${esc(fmtSize(f.tamanho || 0))}</span></a>`;
+    }).join("")}</span>`;
+  }
+  async function hydrateFiles() {
+    const els = Array.from(document.querySelectorAll("[data-file],[data-file-img]"));
+    if (!els.length || !store || !store.fileUrls) return;
+    const refs = Array.from(new Set(els.map((e) => e.dataset.file || e.dataset.fileImg).filter((r) => r && !coverCache[r])));
+    if (refs.length) { try { Object.assign(coverCache, await store.fileUrls(refs)); } catch (e) { return; } }
+    els.forEach((e) => {
+      if (e.dataset.file) { const u = coverCache[e.dataset.file]; if (u) { e.href = u; e.removeAttribute("data-file"); } }
+      if (e.dataset.fileImg) { const u = coverCache[e.dataset.fileImg]; if (u) { e.src = u; e.removeAttribute("data-file-img"); } }
+    });
+  }
+  async function inlineFile(id, file) {
+    // claude.ai / local mode: only photos, reduced and kept inside the project
+    if (!isImgType(file.type)) throw { code: "not_supported" };
+    let blob = await resizeImage(file, 900, 0.62);
+    if (blob.size > 120000) blob = await resizeImage(file, 640, 0.55);
+    return { ref: await blobToDataUrl(blob), nome: file.name || "foto.jpg", tipo: "image/jpeg", tamanho: blob.size, img: true };
+  }
+  // pending files of the open dialog: [{key, file, url}] new, [{key, meta}] already saved
+  function attSection(num) {
+    return `<div class="q"><span class="qn">${num}</span>Fotos e arquivos <span class="opt">(opcional)</span></div>
+      <div class="att-pick">
+        <input type="file" id="att-input" multiple hidden>
+        <button type="button" class="btn" data-action="att-pick">+ Adicionar fotos ou arquivos</button>
+        <span class="hint">${store && store.inlineOnly ? "Neste modo só é possível anexar fotos." : "Fotos, PDF, planilhas, logs… até 25 MB cada."}</span>
+      </div>
+      <div class="att-pending" id="att-list">${attPendingHtml()}</div>`;
+  }
+  function attPendingHtml() {
+    return (state.att || []).map((a) => {
+      const name = a.file ? a.file.name : a.meta.nome;
+      const size = a.file ? a.file.size : a.meta.tamanho;
+      const img = a.file ? isImgType(a.file.type) : a.meta.img;
+      const thumb = img ? (a.url ? `<img src="${esc(a.url)}" alt="">` : (fileSrc(a.meta.ref) ? `<img src="${esc(fileSrc(a.meta.ref))}" alt="">` : `<span class="ext">FOTO</span>`)) : `<span class="ext">${esc(extOf(name))}</span>`;
+      return `<div class="att-row">${thumb}<span class="nm">${esc(name)}</span><span class="sz">${esc(fmtSize(size || 0))}</span><button type="button" class="icon-btn" data-action="att-remove" data-k="${a.key}" aria-label="Remover anexo">×</button></div>`;
+    }).join("");
+  }
+  function renderAttList() { const l = $("#att-list"); if (l) l.innerHTML = attPendingHtml(); }
+  function clearAtt() { (state.att || []).forEach((a) => { if (a.url) URL.revokeObjectURL(a.url); }); state.att = []; state.attRemoved = []; }
+  function addAttFiles(files) {
+    Array.from(files || []).forEach((f) => {
+      if (f.size > MAX_FILE) { toast(`“${f.name}” passa de 25 MB.`); return; }
+      if (store && store.inlineOnly && !isImgType(f.type)) { toast("Neste modo só é possível anexar fotos. No site próprio dá para anexar qualquer arquivo."); return; }
+      state.att.push({ key: rid(), file: f, url: isImgType(f.type) ? URL.createObjectURL(f) : "" });
+    });
+    renderAttList();
+  }
+  async function uploadPending(id, btn) {
+    const out = [];
+    const news = state.att.filter((a) => a.file);
+    let i = 0;
+    for (const a of state.att) {
+      if (a.meta) { out.push(a.meta); continue; }
+      i++;
+      if (btn) btn.textContent = `Enviando ${i} de ${news.length}…`;
+      out.push(await store.uploadFile(id, a.file));
+    }
+    return out;
+  }
+  function removeFiles(list) { const refs = (list || []).map((f) => f.ref).filter(Boolean); if (refs.length && store && store.removeFiles) store.removeFiles(refs).catch(() => {}); }
+
   /* ---------- State ---------- */
   const state = {
     projects: new Map(),
@@ -767,6 +859,9 @@ details.fold[open] > summary { margin-bottom: 10px; }
     confirmDelete: false,
     stagePanel: null,
     reg: null,
+    att: [],
+    saving: false,
+    attRemoved: [],
     nextModal: null,
     jrOpen: null,
     homeView: (function () { try { return localStorage.getItem("vc-home-view") || "cards"; } catch (e) { return "cards"; } })(),
@@ -812,6 +907,9 @@ details.fold[open] > summary { margin-bottom: 10px; }
       newId() { return col.doc().id; },
       uploadCover: inlineCover,
       async removeCover() {},
+      inlineOnly: true,
+      uploadFile: inlineFile,
+      async removeFiles() {},
     };
   }
   function localStore() {
@@ -828,6 +926,9 @@ details.fold[open] > summary { margin-bottom: 10px; }
       newId() { return rid(); },
       uploadCover: inlineCover,
       async removeCover() {},
+      inlineOnly: true,
+      uploadFile: inlineFile,
+      async removeFiles() {},
     };
   }
 
@@ -1110,6 +1211,7 @@ details.fold[open] > summary { margin-bottom: 10px; }
         <div class="nc-body">
           <div><span class="tag ${esc(nt.tipo)}">${esc(NEXT_LABEL[nt.tipo] || "Tarefa")}</span></div>
           <strong>${esc(nt.texto)}</strong>
+          ${attHtml(nt.anexos)}
           ${tel ? `<span class="nc-meta mono">${esc(tel)}</span>` : ""}
           <span class="nc-meta">Agendado${nt.autor ? ` por <span data-uid="${esc(nt.autor)}">…</span>` : ""} em ${esc(fmtDate(nt.criado))}</span>
         </div>
@@ -1132,18 +1234,43 @@ details.fold[open] > summary { margin-bottom: 10px; }
         const parts = (e.texto || "").split("\n");
         const first = parts.shift();
         return `<div class="entry"><span class="when">${esc(fmtDate(e.data))}${e.autor ? `<span class="by" data-uid="${esc(e.autor)}"></span>` : ""}</span>
-          <span class="what"><span class="tag feito">Feito</span><b>${esc(first)}</b>${parts.length ? `<span class="res">${esc(parts.join("\n"))}</span>` : ""}<span class="due-was">previsto para ${esc(fmtDate(e.prazoOriginal))}</span></span><span></span></div>`;
+          <span class="what"><span class="tag feito">Feito</span><b>${esc(first)}</b>${parts.length ? `<span class="res">${esc(parts.join("\n"))}</span>` : ""}<span class="due-was">previsto para ${esc(fmtDate(e.prazoOriginal))}</span>${attHtml(e.anexos)}</span><span></span></div>`;
       }).join("")}</div>` : "";
     return `${top}<p class="hint">Um passo por vez: quando concluir, você anota como foi e já agenda o próximo.</p>${doneList}`;
   }
 
   /* ---------- Next step dialog ---------- */
+  async function saveNext(id, p) {
+    if (state.saving) return;
+    const n = readSched("np"); if (!n) return;
+    const ed = state.nextModal && state.nextModal.edit && nextOf(p);
+    if (ed) { n.id = ed.id; n.criado = ed.criado; n.autor = ed.autor || n.autor; }
+    const btn = $("#np-save-btn");
+    let anexos = [];
+    if (state.att.length) {
+      state.saving = true; if (btn) btn.disabled = true;
+      try { anexos = await uploadPending(id, btn); }
+      catch (e) { state.saving = false; if (btn) { btn.disabled = false; btn.textContent = ed ? "Salvar" : "Agendar"; } toast(attError(e)); return; }
+      state.saving = false;
+    }
+    if (anexos.length) n.anexos = anexos;
+    const removed = state.attRemoved.slice();
+    const replaced = !ed && nextOf(p) ? (nextOf(p).anexos || []) : [];
+    p.proximo = n;
+    closeRegister();
+    state.tab = "proximo";
+    changed(id, ["proximo"], { detail: true, now: true });
+    removeFiles(removed.concat(replaced));
+    toast(ed ? "Próximo passo atualizado." : `Próximo passo agendado para ${fmtDate(n.prazo)}.`);
+  }
   function openNext(edit) {
     const p = state.projects.get(state.selectedId); if (!p) return;
     if (state.reg) closeRegister();
     const nt = nextOf(p);
     const ed = !!(edit && nt);
     state.nextModal = { edit: ed };
+    clearAtt();
+    if (ed) state.att = (nt.anexos || []).map((f) => ({ key: rid(), meta: f }));
     const init = ed ? nt : null;
     const tipo = (init && init.tipo) || "contato";
     const prazo = (init && init.prazo) || addDays(7);
@@ -1165,7 +1292,8 @@ details.fold[open] > summary { margin-bottom: 10px; }
             <input class="field-in mono" type="date" id="np-prazo" data-prefix="np" value="${esc(prazo)}" aria-label="Data">
           </div>
         </div>
-        <div class="modal-f"><button class="btn ghost" data-action="reg-close">Cancelar</button><button class="btn primary" data-action="next-save">${ed ? "Salvar" : "Agendar"}</button></div>
+        ${attSection(3)}
+        <div class="modal-f"><button class="btn ghost" data-action="reg-close">Cancelar</button><button class="btn primary" data-action="next-save" id="np-save-btn">${ed ? "Salvar" : "Agendar"}</button></div>
       </div></div>`;
     m.hidden = false;
     setTimeout(() => { const t = $("#np-texto"); if (t) { t.focus(); t.select(); } }, 0);
@@ -1177,7 +1305,7 @@ details.fold[open] > summary { margin-bottom: 10px; }
       ? diario.map((e) => {
           const tipo = e.tipo || "nota";
           return `<div class="entry ${e.auto ? "auto" : ""}"><span class="when">${esc(fmtDate(e.data))}${e.autor ? `<span class="by" data-uid="${esc(e.autor)}"></span>` : ""}</span>
-          <span class="what"><span class="tag ${esc(tipo)}">${esc(LOG_LABEL[tipo] || "Nota")}</span>${esc(e.texto)}</span>
+          <span class="what"><span class="tag ${esc(tipo)}">${esc(LOG_LABEL[tipo] || "Nota")}</span>${esc(e.texto)}${attHtml(e.anexos)}</span>
           ${e.auto && (e.tipo !== "etapa" || e.texto === "Projeto criado") ? "<span></span>" : `<button class="icon-btn" data-action="log-del" data-entry="${esc(e.id)}" aria-label="Apagar registro" title="Apagar registro">×</button>`}</div>`;
         }).join("")
       : `<div class="entry"><span class="when">—</span><span class="what" style="color:var(--muted)">Nenhum registro ainda. Use “Registrar atividade” para anotar uma visita, ligação ou teste.</span><span></span></div>`;
@@ -1352,6 +1480,7 @@ details.fold[open] > summary { margin-bottom: 10px; }
     const fold = el.querySelector("#jr-fold");
     if (fold) fold.addEventListener("toggle", () => { state.jrOpen = fold.open; });
     hydrateCovers();
+    hydrateFiles();
     hydrateNames();
   }
 
@@ -1366,6 +1495,7 @@ details.fold[open] > summary { margin-bottom: 10px; }
   function openRegister(conclude) {
     const p = state.projects.get(state.selectedId); if (!p) return;
     const nt = nextOf(p);
+    clearAtt();
     state.reg = { conclude: !!(conclude && nt), tipo: conclude && nt ? (NEXT_TO_LOG[nt.tipo] || "nota") : "visita", data: todayISO(), texto: "" };
     renderRegister();
     setTimeout(() => { const t = $("#reg-text"); if (t) t.focus(); }, 0);
@@ -1376,7 +1506,7 @@ details.fold[open] > summary { margin-bottom: 10px; }
     if (d) state.reg.data = d.value || todayISO();
     if (t) state.reg.texto = t.value;
   }
-  function closeRegister() { state.reg = null; state.nextModal = null; const m = $("#modal"); m.hidden = true; m.innerHTML = ""; }
+  function closeRegister() { state.reg = null; state.nextModal = null; clearAtt(); const m = $("#modal"); m.hidden = true; m.innerHTML = ""; }
   function renderRegister() {
     const m = $("#modal");
     const p = state.projects.get(state.selectedId);
@@ -1401,27 +1531,43 @@ details.fold[open] > summary { margin-bottom: 10px; }
         ${nt ? `<label class="conclude"><input type="checkbox" id="reg-conclude" ${r.conclude ? "checked" : ""}><span>Isso conclui o próximo passo: <b>${esc(nt.texto)}</b> <span class="mono">(${esc(fmtDate(nt.prazo))})</span></span></label>` : ""}
         <div class="q"><span class="qn">4</span>E o próximo passo?</div>
         ${schedForm("rg", p, { allowNone: true, tipo: "contato", keep: nt && !r.conclude ? nt : null })}
-        <div class="modal-f"><button class="btn ghost" data-action="reg-close">Cancelar</button><button class="btn primary" data-action="reg-save">Salvar</button></div>
+        ${attSection(5)}
+        <div class="modal-f"><button class="btn ghost" data-action="reg-close">Cancelar</button><button class="btn primary" data-action="reg-save" id="reg-save-btn">Salvar</button></div>
       </div></div>`;
     m.hidden = false;
   }
-  function saveRegister() {
-    const id = state.selectedId; const p = state.projects.get(id); if (!p || !state.reg) return;
+  async function saveRegister() {
+    const id = state.selectedId; const p = state.projects.get(id); if (!p || !state.reg || state.saving) return;
     captureRegister();
     const r = state.reg;
     const nt = nextOf(p);
     const conclude = !!(nt && $("#reg-conclude") && $("#reg-conclude").checked);
     const texto = (r.texto || "").trim();
-    if (!texto && !conclude) { toast("Escreva como foi."); $("#reg-text").focus(); return; }
+    if (!texto && !conclude && !state.att.length) { toast("Escreva como foi."); $("#reg-text").focus(); return; }
     const n = readSched("rg"); if (n === false) return;
+    const btn = $("#reg-save-btn");
+    let anexos = [];
+    if (state.att.length) {
+      state.saving = true; if (btn) btn.disabled = true;
+      try { anexos = await uploadPending(id, btn); }
+      catch (e) { state.saving = false; if (btn) { btn.disabled = false; btn.textContent = "Salvar"; } toast(attError(e)); return; }
+      state.saving = false;
+    }
     const entry = { id: rid(), data: r.data || todayISO(), tipo: r.tipo, texto: conclude ? nt.texto + (texto ? "\n" + texto : "") : texto, autor: state.myId || "" };
-    if (conclude) entry.prazoOriginal = nt.prazo;
+    if (conclude) { entry.prazoOriginal = nt.prazo; anexos = (nt.anexos || []).concat(anexos); }
+    if (anexos.length) entry.anexos = anexos;
     p.diario = (p.diario || []).concat([entry]);
     const fields = ["diario"];
     if (n !== "keep") { p.proximo = n || null; fields.push("proximo"); }
     closeRegister();
     changed(id, fields, { detail: true, now: true });
     toast(n && n !== "keep" ? `Registrado. Próximo passo em ${fmtDate(n.prazo)}.` : "Registrado no histórico.");
+  }
+
+  function attError(e) {
+    if (e && e.code === "no_bucket") return "Falta configurar o armazenamento de anexos no Supabase (supabase/003_anexos.sql).";
+    if (e && e.code === "not_supported") return "Neste modo só é possível anexar fotos.";
+    return "Não foi possível enviar os anexos. Verifique a conexão e tente de novo.";
   }
 
   function renderAgenda() {
@@ -1586,6 +1732,12 @@ details.fold[open] > summary { margin-bottom: 10px; }
       return;
     }
 
+    if (a === "att-pick") { const f = $("#att-input"); if (f) f.click(); return; }
+    if (a === "att-remove") {
+      const k = b.dataset.k; const it = state.att.find((x) => x.key === k);
+      if (it) { if (it.url) URL.revokeObjectURL(it.url); if (it.meta) state.attRemoved.push(it.meta); }
+      state.att = state.att.filter((x) => x.key !== k); renderAttList(); return;
+    }
     if (a === "reg-open") { openRegister(b.dataset.conclude === "1"); return; }
     if (a === "reg-close") { closeRegister(); return; }
     if (a === "reg-bg") { if (ev.target === b) closeRegister(); return; }
@@ -1647,6 +1799,7 @@ details.fold[open] > summary { margin-bottom: 10px; }
       state.projects.delete(id); state.selectedId = null; state.confirmDelete = false;
       store.del(id).catch(() => toast("Não foi possível excluir. Tente de novo."));
       if (oldCover) store.removeCover(oldCover).catch(() => {});
+      removeFiles([].concat(...(p.diario || []).map((e) => e.anexos || []), (p.proximo && p.proximo.anexos) || []));
       renderSummary(); renderList(); renderDetail(); toast("Projeto excluído.");
       return;
     }
@@ -1667,18 +1820,8 @@ details.fold[open] > summary { margin-bottom: 10px; }
     if (a === "stage-pend") { setPending(id, b.dataset.v, true); return; }
 
     if (a === "next-open") { openNext(b.dataset.edit === "1"); return; }
-    if (a === "next-save") {
-      const n = readSched("np"); if (!n) return;
-      const ed = state.nextModal && state.nextModal.edit && nextOf(p);
-      if (ed) { n.id = ed.id; n.criado = ed.criado; n.autor = ed.autor || n.autor; }
-      p.proximo = n;
-      closeRegister();
-      state.tab = "proximo";
-      changed(id, ["proximo"], { detail: true, now: true });
-      toast(ed ? "Próximo passo atualizado." : `Próximo passo agendado para ${fmtDate(n.prazo)}.`);
-      return;
-    }
-    if (a === "next-drop") { p.proximo = null; changed(id, ["proximo"], { detail: true, now: true }); return; }
+    if (a === "next-save") { saveNext(id, p); return; }
+    if (a === "next-drop") { const old = nextOf(p); p.proximo = null; changed(id, ["proximo"], { detail: true, now: true }); if (old) removeFiles(old.anexos); return; }
     if (a === "ck-set") {
       const it = p.checklist.find((x) => x.id === b.dataset.item); if (!it) return;
       it.status = it.status === b.dataset.v ? "pendente" : b.dataset.v;
@@ -1696,7 +1839,14 @@ details.fold[open] > summary { margin-bottom: 10px; }
     if (a === "ck-del") { p.checklist = p.checklist.filter((x) => x.id !== b.dataset.item); changed(id, ["checklist"], { detail: true }); return; }
     if (a === "ck-template") { p.checklist = makeChecklist(p.tipo); changed(id, ["checklist"], { detail: true }); return; }
     if (a === "ck-add") { addItem(p, id); return; }
-    if (a === "log-del") { p.diario = (p.diario || []).filter((e) => e.id !== b.dataset.entry); changed(id, ["diario"], { detail: true }); return; }
+    if (a === "log-del") {
+      const gone = (p.diario || []).find((e) => e.id === b.dataset.entry);
+      p.diario = (p.diario || []).filter((e) => e.id !== b.dataset.entry);
+      changed(id, ["diario"], { detail: true });
+      const nt = nextOf(p); const keepRefs = new Set(((nt && nt.anexos) || []).map((f) => f.ref));
+      if (gone) removeFiles((gone.anexos || []).filter((f) => !keepRefs.has(f.ref)));
+      return;
+    }
   });
 
   function addItem(p, id) {
@@ -1749,6 +1899,7 @@ details.fold[open] > summary { margin-bottom: 10px; }
   }
   document.addEventListener("change", (ev) => {
     const t = ev.target;
+    if (t.id === "att-input") { addAttFiles(t.files); t.value = ""; return; }
     if (t.id === "reg-conclude") { captureRegister(); state.reg.conclude = t.checked; renderRegister(); return; }
     if (t.id === "cover-file") { const id = state.selectedId; if (id && t.files && t.files[0]) handleCoverFile(id, t.files[0]); t.value = ""; return; }
     if (t.id === "f-status") { state.filter.status = t.value; renderList(); return; }
@@ -1820,6 +1971,25 @@ details.fold[open] > summary { margin-bottom: 10px; }
         return "sb:" + path;
       },
       async removeCover(ref) { if (ref && ref.startsWith("sb:")) await sb.storage.from("capas").remove([ref.slice(3)]); },
+      async uploadFile(id, file) {
+        const img = isImgType(file.type) && !/heic|heif/i.test(file.type);
+        const blob = img ? await resizeImage(file, 2000, 0.85) : file;
+        const name = img ? safeName(file.name).replace(/\.[^.]+$/, "") + ".jpg" : safeName(file.name);
+        const path = id + "/" + Date.now() + "-" + rid().slice(0, 6) + "-" + name;
+        const { error } = await sb.storage.from("anexos").upload(path, blob, { contentType: img ? "image/jpeg" : (file.type || "application/octet-stream"), upsert: false });
+        if (error) throw { code: /bucket/i.test(error.message || "") ? "no_bucket" : "upload", message: error.message };
+        return { ref: "sa:" + path, nome: file.name || name, tipo: img ? "image/jpeg" : (file.type || ""), tamanho: blob.size, img: isImgType(file.type) };
+      },
+      async removeFiles(refs) { const paths = refs.filter((r) => r.startsWith("sa:")).map((r) => r.slice(3)); if (paths.length) await sb.storage.from("anexos").remove(paths); },
+      async fileUrls(refs) {
+        const paths = refs.filter((r) => r.startsWith("sa:")).map((r) => r.slice(3));
+        const out = {};
+        if (!paths.length) return out;
+        const { data, error } = await sb.storage.from("anexos").createSignedUrls(paths, 6 * 3600);
+        if (error) return out;
+        (data || []).forEach((d) => { if (d.signedUrl) out["sa:" + d.path] = d.signedUrl; });
+        return out;
+      },
       async coverUrls(refs) {
         const paths = refs.filter((r) => r.startsWith("sb:")).map((r) => r.slice(3));
         const out = {};
