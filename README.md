@@ -16,7 +16,7 @@ Para configurar o site e cadastrar pessoas, veja [docs/CONFIGURAR.md](docs/CONFI
 ## O que o app faz
 
 - **Jornada** por etapas (Primeiro contato → Visita agendada → Instalação → Homologação → Entrega e treinamento → Acompanhamento em campo → Acompanhamento pós-entrega → Encerrado; a validação de engenharia tem etapas próprias), com data de cada mudança. Uma etapa pode ficar **pendente** mesmo com o projeto já mais à frente, e ser concluída depois.
-- **Um próximo passo por vez** (ex.: "entrar em contato daqui 7 dias"), agendado pelo botão **+ Próximo passo**. Ao concluir, você registra como foi e já agenda o seguinte. A aba Próximo passo mostra o atual e a lista dos já concluídos.
+- **Um próximo passo por vez** (ex.: "entrar em contato daqui 7 dias"), agendado pelo botão **+ Próximo passo**. Ao concluir, você registra como foi e já agenda o seguinte. O próximo passo aparece no topo do Histórico, como o item mais à frente da linha do tempo.
 - **Cliente no centro, com várias máquinas**: cada projeto é um cliente; a aba **Máquinas** guarda cada máquina instalada, com dados, situação (aguardando instalação → instalada → homologada → entregue) e checklist próprios. Atividades podem ser ligadas às máquinas. Em validação, são **Unidades de teste**.
 - **Automático**: registrar uma atividade avança a jornada e a situação das máquinas:
   - Agendar próximo passo do tipo Visita (no Primeiro contato) → *Visita agendada*
@@ -28,7 +28,7 @@ Para configurar o site e cadastrar pessoas, veja [docs/CONFIGURAR.md](docs/CONFI
   A jornada só anda para frente; para desfazer, clique na etapa anterior e em "Voltar o projeto para esta etapa".
 - **Painel inicial** em cartões, com imagem de capa, etapa da jornada e próximo passo de cada projeto, ou em colunas **por etapa**.
 - **Agenda**: o próximo passo de cada projeto, separado em atrasados, hoje, próximos 7 dias e mais adiante, além dos projetos sem próximo passo.
-- **Abas separadas** em cada projeto: Próximo passo, Histórico, Checklist e Dados.
+- **Abas** em cada projeto: Histórico (com o próximo passo no topo), Máquinas e Dados.
 - **Registrar atividade**: um formulário único, em 4 passos (o que fez, quando, como foi, próximo passo), para visitas, ligações, mensagens, testes e anotações.
 - **Fotos e arquivos**: anexe fotos, PDFs, planilhas ou logs ao registrar uma atividade ou agendar um próximo passo (até 25 MB cada).
 - **Histórico**: tudo o que foi registrado, com data, autor e anexos.

@@ -474,6 +474,9 @@ details.fold[open] > summary { margin-bottom: 10px; }
 .link-row span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
 .link-row:hover span:first-child { text-decoration: underline; text-underline-offset: 2px; }
 .link-row .pill { font-size: 10.5px; flex: none; }
+.tl-next { display: flex; flex-direction: column; gap: 8px; padding-bottom: 6px; }
+.tl-next .next-card { padding: 12px 14px; }
+.tl-next .nc-when .big { font-size: 28px; }
 .hist-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
 
 /* Register activity dialog */
@@ -923,7 +926,7 @@ details.fold[open] > summary { margin-bottom: 10px; }
     loaded: false,
     selectedId: null,
     view: "projetos",
-    tab: "proximo",
+    tab: "historico",
     agendaTipo: "todas",
     filter: { tipo: "todos", status: "ativos", q: "" },
     newTipo: "homologacao",
@@ -1324,12 +1327,8 @@ details.fold[open] > summary { margin-bottom: 10px; }
     </div>`;
   }
 
-  function lastLine(p) {
-    const le = lastEntry(p);
-    return le ? `<div class="last">Último registro: <b>${fmtDate(le.data)}</b><span class="tag ${esc(le.tipo || "nota")}">${esc(LOG_LABEL[le.tipo || "nota"] || "Nota")}</span><span>${esc((le.texto || "").split("\n")[0])}</span><button class="link" data-action="tab" data-v="historico">ver histórico</button></div>` : "";
-  }
 
-  function tabProximo(p) {
+  function nextBlock(p) {
     const nt = nextOf(p);
     const tel = p.tipo === "homologacao" && (p.contato || p.contatoTel) ? [p.contato, p.contatoTel].filter(Boolean).join(" · ") : (p.tipo === "validacao" && p.engenharia ? p.engenharia : "");
     let top;
@@ -1356,16 +1355,7 @@ details.fold[open] > summary { margin-bottom: 10px; }
       top = `<div class="box next-empty"><strong>Nenhum próximo passo agendado</strong><p class="hint">${esc(hint)}</p>
         <div><button class="btn primary" data-action="next-open">+ Agendar próximo passo</button></div></div>`;
     }
-    const done = (p.diario || []).map((e, i) => Object.assign({ _i: i }, e)).filter((e) => e.prazoOriginal)
-      .sort((a, b) => (a.data < b.data ? 1 : a.data > b.data ? -1 : b._i - a._i));
-    const doneList = done.length ? `<div class="sec-sub">Passos concluídos</div>
-      <div class="log">${done.map((e) => {
-        const parts = (e.texto || "").split("\n");
-        const first = parts.shift();
-        return `<div class="entry"><span class="when">${esc(fmtDate(e.data))}${e.autor ? `<span class="by" data-uid="${esc(e.autor)}"></span>` : ""}</span>
-          <span class="what"><span class="tag feito">Feito</span><b>${esc(first)}</b>${parts.length ? `<span class="res">${esc(parts.join("\n"))}</span>` : ""}<span class="due-was">previsto para ${esc(fmtDate(e.prazoOriginal))}</span>${attHtml(e.anexos)}</span><span></span></div>`;
-      }).join("")}</div>` : "";
-    return `${top}<p class="hint">Um passo por vez: quando concluir, você anota como foi e já agenda o próximo.</p>${doneList}`;
+    return top;
   }
 
   /* ---------- Next step dialog ---------- */
@@ -1388,7 +1378,7 @@ details.fold[open] > summary { margin-bottom: 10px; }
     p.proximo = n;
     const auto = applyAutomation(p, { tipo: null, maquinas: [], next: n });
     closeRegister();
-    state.tab = "proximo";
+    state.tab = "historico";
     changed(id, ["proximo"].concat(auto.fields), { detail: true, now: true });
     removeFiles(removed.concat(replaced));
     const base = ed ? "Próximo passo atualizado." : `Próximo passo agendado para ${fmtDate(n.prazo)}.`;
@@ -1442,11 +1432,13 @@ details.fold[open] > summary { margin-bottom: 10px; }
       ? diario.map((e) => {
           const tipo = e.tipo || "nota";
           return `<div class="entry ${e.auto ? "auto" : ""}"><span class="when">${esc(fmtDate(e.data))}${e.autor ? `<span class="by" data-uid="${esc(e.autor)}"></span>` : ""}</span>
-          <span class="what"><span class="tag ${esc(tipo)}">${esc(LOG_LABEL[tipo] || "Nota")}</span>${esc(e.texto)}${machTags(p, e.maquinas)}${attHtml(e.anexos)}</span>
+          <span class="what"><span class="tag ${esc(tipo)}">${esc(LOG_LABEL[tipo] || "Nota")}</span>${esc(e.texto)}${e.prazoOriginal ? `<span class="due-was">✓ próximo passo concluído · previsto para ${esc(fmtDate(e.prazoOriginal))}</span>` : ""}${machTags(p, e.maquinas)}${attHtml(e.anexos)}</span>
           ${e.auto && ((e.tipo !== "etapa" && e.tipo !== "maquina") || e.texto === "Projeto criado") ? "<span></span>" : `<button class="icon-btn" data-action="log-del" data-entry="${esc(e.id)}" aria-label="Apagar registro" title="Apagar registro">×</button>`}</div>`;
         }).join("")
       : `<div class="entry"><span class="when">—</span><span class="what" style="color:var(--muted)">Nenhum registro ainda. Use “Registrar atividade” para anotar uma visita, ligação ou teste.</span><span></span></div>`;
-    return `<div class="hist-head"><p class="hint">Tudo o que já foi feito, do mais recente para o mais antigo.</p><button class="btn primary" data-action="reg-open">+ Registrar atividade</button></div>
+    return `<div class="hist-head"><p class="hint">Linha do tempo: o próximo passo no topo e, abaixo, tudo o que já foi feito, do mais recente para o mais antigo.</p><button class="btn primary" data-action="reg-open">+ Registrar atividade</button></div>
+      <div class="tl-next"><div class="sec-sub">Próximo passo</div>${nextBlock(p)}</div>
+      <div class="sec-sub">Já feito</div>
       <div class="log">${log}</div>`;
   }
 
@@ -1627,17 +1619,15 @@ details.fold[open] > summary { margin-bottom: 10px; }
     const closed = CLOSED.has(p.status) || stageKey(p) === "encerrado";
     const subTxt = subline(p) + (p.tipo === "homologacao" && p.contatoTel ? " · " + p.contatoTel : "");
 
-    const nCls = nt ? (dueClass(nt.prazo) || "") : (closed ? "" : "warn");
-    const nTxt = nt ? (dueClass(nt.prazo) === "late" ? "atrasado" : fmtDate(nt.prazo).slice(0, 5)) : (closed ? "" : "nenhum");
     const nDiario = (p.diario || []).filter((e) => !e.auto).length;
     const tabs = [
-      { k: "proximo", l: "Próximo passo", cnt: nTxt, cls: nCls },
-      { k: "historico", l: "Histórico", cnt: String(nDiario), cls: "" },
+      { k: "historico", l: "Histórico", cnt: nt && dueClass(nt.prazo) === "late" ? "atrasado" : String(nDiario), cls: nt && dueClass(nt.prazo) === "late" ? "late" : "" },
       { k: "maquinas", l: machCfg(p).nome, cnt: machinesOf(p).length ? (c.falha ? `${machinesOf(p).length} · ${c.falha} falha${c.falha > 1 ? "s" : ""}` : String(machinesOf(p).length)) : "", cls: c.falha ? "late" : "" },
       { k: "dados", l: "Dados", cnt: "", cls: "" },
     ];
     if (state.tab === "checklist") state.tab = "maquinas";
-    const tabBody = state.tab === "historico" ? tabHistorico(p) : state.tab === "maquinas" ? tabMaquinas(p) : state.tab === "dados" ? tabDados(p) : tabProximo(p);
+    if (state.tab === "proximo") state.tab = "historico";
+    const tabBody = state.tab === "maquinas" ? tabMaquinas(p) : state.tab === "dados" ? tabDados(p) : tabHistorico(p);
 
     const coverBlock = `<div class="d-cover ${p.capa ? "" : "none"}">${p.capa ? coverImg(p.capa) : ""}
         <div class="cv-actions">
@@ -1896,7 +1886,7 @@ details.fold[open] > summary { margin-bottom: 10px; }
     state.openMachine = null; state.mDelAsk = null;
     if (state.reg || state.nextModal) closeRegister();
     state.selectedId = pid; state.view = "projetos"; state.confirmDelete = false; state.stagePanel = null;
-    state.openNotes.clear(); state.tab = tab || "proximo";
+    state.openNotes.clear(); state.tab = tab || "historico";
     renderView(); renderList(); renderDetail(); window.scrollTo(0, 0);
   }
 
@@ -1912,7 +1902,7 @@ details.fold[open] > summary { margin-bottom: 10px; }
     if (a === "um-logout") { if (sbClient) sbClient.auth.signOut().finally(() => location.reload()); return; }
     if (a === "view") { state.view = b.dataset.v; renderView(); return; }
     if (a === "agenda-tipo") { state.agendaTipo = b.dataset.v; renderAgenda(); return; }
-    if (a === "open") { selectProject(b.dataset.id, "proximo"); return; }
+    if (a === "open") { selectProject(b.dataset.id, "historico"); return; }
 
     // Schedule form controls: update the form in place, no re-render
     if (a === "sched-tipo") {
@@ -1998,7 +1988,7 @@ details.fold[open] > summary { margin-bottom: 10px; }
     }
     if (a === "home-view") { state.homeView = b.dataset.v; try { localStorage.setItem("vc-home-view", state.homeView); } catch (e) {} renderList(); return; }
     if (a === "f-tipo") { state.filter.tipo = b.dataset.v; renderFilters(); renderList(); return; }
-    if (a === "select") { selectProject(b.dataset.id, "proximo"); return; }
+    if (a === "select") { selectProject(b.dataset.id, "historico"); return; }
     if (a === "back") { if (state.reg || state.nextModal) closeRegister(); state.selectedId = null; renderList(); renderDetail(); return; }
 
     const id = state.selectedId;
