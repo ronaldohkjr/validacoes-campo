@@ -477,6 +477,8 @@ details.fold[open] > summary { margin-bottom: 10px; }
 .tl-next { display: flex; flex-direction: column; gap: 8px; padding-bottom: 6px; }
 .tl-next .next-card { padding: 12px 14px; }
 .tl-next .nc-when .big { font-size: 28px; }
+.future-box { background: var(--info-soft); color: var(--ink); border-radius: 8px; padding: 9px 12px; font-size: 13px; }
+.sched-row select { flex: 0 0 160px; }
 .hist-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
 
 /* Register activity dialog */
@@ -638,13 +640,11 @@ details.fold[open] > summary { margin-bottom: 10px; }
   };
   const FOLLOWUP_STAGES = new Set(["acompanhamento", "liberado"]);
 
-  const NEXT_TIPOS = [
-    { v: "contato", l: "Entrar em contato" },
-    { v: "visita", l: "Visita" },
-    { v: "tarefa", l: "Outra tarefa" },
-  ];
   const NEXT_LABEL = { contato: "Contato", visita: "Visita", tarefa: "Tarefa" };
   const NEXT_TO_LOG = { contato: "ligacao", visita: "visita", tarefa: "nota" };
+  const toLog = (t) => NEXT_TO_LOG[t] || (["visita", "instalacao", "suporte", "treinamento", "ligacao", "mensagem", "teste", "nota"].includes(t) ? t : "nota");
+  const actLabel = (t) => LOG_LABEL[t] || NEXT_LABEL[t] || "Tarefa";
+  const CONTACT_TYPES = new Set(["contato", "ligacao", "mensagem"]);
   const DAY_CHIPS = [7, 15, 30, 60, 90];
 
   const LOG_TIPOS = [
@@ -793,8 +793,14 @@ details.fold[open] > summary { margin-bottom: 10px; }
   const nextOf = (p) => (p.proximo && p.proximo.texto ? p.proximo : null);
   function dueClass(iso) { const d = daysFrom(iso); return d === null ? "" : d < 0 ? "late" : d === 0 ? "today" : ""; }
   function defaultNextText(p, tipo) {
-    if (tipo === "visita") return `Visita em ${p.fazenda || p.cliente || "cliente"}`;
-    if (tipo === "tarefa") return "";
+    const where = p.fazenda || p.cliente || "cliente";
+    if (tipo === "visita") return `Visita em ${where}`;
+    if (tipo === "instalacao") return `Instalação em ${where}`;
+    if (tipo === "suporte") return `Suporte em ${where}`;
+    if (tipo === "treinamento") return `Treinamento do operador em ${where}`;
+    if (tipo === "teste") return p.tipo === "validacao" ? `Teste da versão ${p.versaoSw || ""}`.trim() : `Teste em ${where}`;
+    if (tipo === "mensagem") return `Mandar mensagem para ${p.contato || p.cliente || "o cliente"}`;
+    if (tipo === "tarefa" || tipo === "nota") return "";
     if (p.tipo === "validacao") return `Cobrar retorno de ${p.engenharia || "engenharia"}${p.versaoSw ? " sobre a versão " + p.versaoSw : ""}`;
     return `Entrar em contato com ${p.contato || p.cliente || "o cliente"} para ver como está`;
   }
@@ -1306,18 +1312,17 @@ details.fold[open] > summary { margin-bottom: 10px; }
 
   function schedForm(prefix, p, opts) {
     const init = (opts && opts.initial) || null;
-    const tipo = (init && init.tipo) || (opts && opts.tipo) || "contato";
+    const tipo = toLog((init && init.tipo) || (opts && opts.tipo) || "ligacao");
     const keep = opts && opts.keep;
     const prazo = (init && init.prazo) || addDays(7);
     const days = DAY_CHIPS.find((n) => addDays(n) === prazo) || 0;
     return `<div class="sched ${keep ? "off" : ""}" id="${prefix}-sched">
-      <input type="hidden" id="${prefix}-tipo" value="${tipo}">
       <input type="hidden" id="${prefix}-none" value="0">
       <input type="hidden" id="${prefix}-keep" value="${keep ? "1" : "0"}">
       ${keep ? `<div class="quick"><button type="button" class="chip" data-action="sched-keep" data-prefix="${prefix}" aria-pressed="true">Manter o atual: ${esc(keep.texto)} · ${esc(fmtDate(keep.prazo))}</button><span>ou agende outro:</span></div>` : ""}
       <div class="sched-what" style="display:flex;flex-direction:column;gap:8px">
-        <div class="seg" role="group" aria-label="Tipo de passo">${NEXT_TIPOS.map((t) => `<button type="button" data-action="sched-tipo" data-prefix="${prefix}" data-v="${t.v}" aria-pressed="${t.v === tipo}">${t.l}</button>`).join("")}</div>
-        <input class="field-in" id="${prefix}-texto" data-auto="${init ? "0" : "1"}" value="${esc(init ? init.texto : defaultNextText(p, tipo))}" placeholder="O que precisa ser feito…" aria-label="O que fazer">
+        <div class="row2 sched-row"><select class="field-in" id="${prefix}-tipo" data-sched-tipo="1" data-prefix="${prefix}" aria-label="Tipo de atividade">${REG_TIPOS.map((t) => `<option value="${t.v}" ${t.v === tipo ? "selected" : ""}>${t.l}</option>`).join("")}</select>
+        <input class="field-in" id="${prefix}-texto" data-auto="${init ? "0" : "1"}" value="${esc(init ? init.texto : defaultNextText(p, tipo))}" placeholder="O que precisa ser feito…" aria-label="O que fazer"></div>
       </div>
       <div class="quick sched-when">Quando:
         ${DAY_CHIPS.map((n) => `<button type="button" class="chip" data-action="sched-days" data-prefix="${prefix}" data-v="${n}" aria-pressed="${!keep && n === days}">${n} dias</button>`).join("")}
@@ -1337,8 +1342,9 @@ details.fold[open] > summary { margin-bottom: 10px; }
       top = `<div class="next-card ${dc}">
         <div class="nc-when"><span class="big">${esc(fmtDate(nt.prazo).slice(0, 5))}</span><span class="rel">${esc(relDay(nt.prazo))}</span></div>
         <div class="nc-body">
-          <div><span class="tag ${esc(nt.tipo)}">${esc(NEXT_LABEL[nt.tipo] || "Tarefa")}</span></div>
+          <div><span class="tag ${esc(nt.tipo)}">${esc(actLabel(nt.tipo))}</span></div>
           <strong>${esc(nt.texto)}</strong>
+          ${machTags(p, nt.maquinas)}
           ${attHtml(nt.anexos)}
           ${tel ? `<span class="nc-meta mono">${esc(tel)}</span>` : ""}
           <span class="nc-meta">Agendado${nt.autor ? ` por <span data-uid="${esc(nt.autor)}">…</span>` : ""} em ${esc(fmtDate(nt.criado))}</span>
@@ -1356,68 +1362,6 @@ details.fold[open] > summary { margin-bottom: 10px; }
         <div><button class="btn primary" data-action="next-open">+ Agendar próximo passo</button></div></div>`;
     }
     return top;
-  }
-
-  /* ---------- Next step dialog ---------- */
-  async function saveNext(id, p) {
-    if (state.saving) return;
-    const n = readSched("np"); if (!n) return;
-    const ed = state.nextModal && state.nextModal.edit && nextOf(p);
-    if (ed) { n.id = ed.id; n.criado = ed.criado; n.autor = ed.autor || n.autor; }
-    const btn = $("#np-save-btn");
-    let anexos = [];
-    if (state.att.length) {
-      state.saving = true; if (btn) btn.disabled = true;
-      try { anexos = await uploadPending(id, btn); }
-      catch (e) { state.saving = false; if (btn) { btn.disabled = false; btn.textContent = ed ? "Salvar" : "Agendar"; } toast(attError(e)); return; }
-      state.saving = false;
-    }
-    if (anexos.length) n.anexos = anexos;
-    const removed = state.attRemoved.slice();
-    const replaced = !ed && nextOf(p) ? (nextOf(p).anexos || []) : [];
-    p.proximo = n;
-    const auto = applyAutomation(p, { tipo: null, maquinas: [], next: n });
-    closeRegister();
-    state.tab = "historico";
-    changed(id, ["proximo"].concat(auto.fields), { detail: true, now: true });
-    removeFiles(removed.concat(replaced));
-    const base = ed ? "Próximo passo atualizado." : `Próximo passo agendado para ${fmtDate(n.prazo)}.`;
-    toast(auto.msgs.length ? `${base} Atualizado: ${auto.msgs.join(", ")}.` : base);
-  }
-  function openNext(edit) {
-    const p = state.projects.get(state.selectedId); if (!p) return;
-    if (state.reg) closeRegister();
-    const nt = nextOf(p);
-    const ed = !!(edit && nt);
-    state.nextModal = { edit: ed };
-    clearAtt();
-    if (ed) state.att = (nt.anexos || []).map((f) => ({ key: rid(), meta: f }));
-    const init = ed ? nt : null;
-    const tipo = (init && init.tipo) || "contato";
-    const prazo = (init && init.prazo) || addDays(7);
-    const days = DAY_CHIPS.find((n) => addDays(n) === prazo) || 0;
-    const m = $("#modal");
-    m.innerHTML = `<div class="modal-bg" data-action="reg-bg">
-      <div class="modal" role="dialog" aria-modal="true" aria-labelledby="np-h">
-        <div class="modal-h"><div><h2 id="np-h">${ed ? "Editar próximo passo" : "Próximo passo"}</h2><div class="hint">${esc(p.titulo || "Sem nome")}</div></div><button class="icon-btn" data-action="reg-close" aria-label="Fechar">✕</button></div>
-        ${nt && !ed ? `<div class="conclude warn-box">Isso substitui o próximo passo atual: <b>${esc(nt.texto)}</b> <span class="mono">(${esc(fmtDate(nt.prazo))})</span>. Se ele já foi feito, use “Registrar atividade” para anotar como foi.</div>` : ""}
-        <div class="sched" id="np-sched">
-          <input type="hidden" id="np-tipo" value="${tipo}">
-          <input type="hidden" id="np-none" value="0">
-          <div class="q"><span class="qn">1</span>O que precisa ser feito?</div>
-          <div class="seg" role="group" aria-label="Tipo de passo">${NEXT_TIPOS.map((t) => `<button type="button" data-action="sched-tipo" data-prefix="np" data-v="${t.v}" aria-pressed="${t.v === tipo}">${t.l}</button>`).join("")}</div>
-          <input class="field-in" id="np-texto" data-auto="${init ? "0" : "1"}" value="${esc(init ? init.texto : defaultNextText(p, tipo))}" placeholder="O que precisa ser feito…" aria-label="O que fazer">
-          <div class="q"><span class="qn">2</span>Quando?</div>
-          <div class="quick sched-when">
-            ${DAY_CHIPS.map((n) => `<button type="button" class="chip" data-action="sched-days" data-prefix="np" data-v="${n}" aria-pressed="${n === days}">${n} dias</button>`).join("")}
-            <input class="field-in mono" type="date" id="np-prazo" data-prefix="np" value="${esc(prazo)}" aria-label="Data">
-          </div>
-        </div>
-        ${attSection(3)}
-        <div class="modal-f"><span class="modal-err" id="modal-err" role="alert"></span><button class="btn ghost" data-action="reg-close">Cancelar</button><button class="btn primary" data-action="next-save" id="np-save-btn">${ed ? "Salvar" : "Agendar"}</button></div>
-      </div></div>`;
-    m.hidden = false;
-    setTimeout(() => { const t = $("#np-texto"); if (t) { t.focus(); t.select(); } }, 0);
   }
 
   function machTags(p, ids) {
@@ -1682,22 +1626,33 @@ details.fold[open] > summary { margin-bottom: 10px; }
 
   /* ---------- Register activity (one form for visits, calls, messages, tests, notes) ---------- */
   const REG_TIPOS = [
-    { v: "visita", l: "Visita", d: "Esteve no cliente ou em campo", ph: "O que foi feito na visita? Ex.: levantamento, vistoria, acompanhamento, problemas encontrados…" },
-    { v: "instalacao", l: "Instalação", d: "Instalou equipamento na máquina", ph: "O que foi instalado, em qual máquina, materiais usados, calibrações, pendências…" },
-    { v: "suporte", l: "Suporte", d: "Resolveu problema ou dúvida", ph: "Qual era o problema, a causa, o que foi feito e se ficou resolvido…" },
-    { v: "treinamento", l: "Treinamento", d: "Treinou operador ou equipe", ph: "Quem foi treinado, quais funções, dúvidas do operador, se ficou seguro para operar…" },
-    { v: "ligacao", l: "Ligação", d: "Falou por telefone", ph: "O que foi conversado? Como está o equipamento? O cliente pediu algo?" },
-    { v: "mensagem", l: "Mensagem", d: "WhatsApp ou e-mail", ph: "Resumo da conversa por WhatsApp ou e-mail…" },
-    { v: "teste", l: "Teste", d: "Bancada ou campo", ph: "O que foi testado, resultado, versão usada…" },
-    { v: "nota", l: "Anotação", d: "Observação geral", ph: "Anotação…" },
+    { v: "visita", l: "Visita", d: "Esteve no cliente ou em campo", df: "Ir ao cliente ou a campo", ph: "O que foi feito na visita? Ex.: levantamento, vistoria, acompanhamento, problemas encontrados…" },
+    { v: "instalacao", l: "Instalação", d: "Instalou equipamento na máquina", df: "Instalar equipamento na máquina", ph: "O que foi instalado, em qual máquina, materiais usados, calibrações, pendências…" },
+    { v: "suporte", l: "Suporte", d: "Resolveu problema ou dúvida", df: "Resolver problema ou dúvida", ph: "Qual era o problema, a causa, o que foi feito e se ficou resolvido…" },
+    { v: "treinamento", l: "Treinamento", d: "Treinou operador ou equipe", df: "Treinar operador ou equipe", ph: "Quem foi treinado, quais funções, dúvidas do operador, se ficou seguro para operar…" },
+    { v: "ligacao", l: "Ligação", d: "Falou por telefone", df: "Ligar para o cliente", ph: "O que foi conversado? Como está o equipamento? O cliente pediu algo?" },
+    { v: "mensagem", l: "Mensagem", d: "WhatsApp ou e-mail", df: "WhatsApp ou e-mail", ph: "Resumo da conversa por WhatsApp ou e-mail…" },
+    { v: "teste", l: "Teste", d: "Bancada ou campo", df: "Bancada ou campo", ph: "O que foi testado, resultado, versão usada…" },
+    { v: "nota", l: "Anotação", d: "Observação geral", df: "Lembrete geral", ph: "Anotação…" },
   ];
-  function openRegister(conclude, mid) {
+  function openRegister(o) {
+    o = o || {};
     const p = state.projects.get(state.selectedId); if (!p) return;
     const nt = nextOf(p);
+    if (state.reg || state.nextModal) closeRegister();
     clearAtt();
-    state.reg = { conclude: !!(conclude && nt), tipo: conclude && nt ? (NEXT_TO_LOG[nt.tipo] || "nota") : "visita", data: todayISO(), texto: "", maquinas: mid ? [mid] : [] };
+    if (o.edit && nt) {
+      state.reg = { edit: true, conclude: false, tipo: toLog(nt.tipo), data: nt.prazo || addDays(7), texto: nt.texto || "", maquinas: (nt.maquinas || []).slice() };
+      state.att = (nt.anexos || []).map((f) => ({ key: rid(), meta: f }));
+    } else if (o.conclude && nt) {
+      state.reg = { conclude: true, tipo: toLog(nt.tipo), data: todayISO(), texto: "", maquinas: (nt.maquinas || []).slice() };
+    } else if (o.future) {
+      state.reg = { conclude: false, tipo: "ligacao", data: addDays(7), texto: defaultNextText(p, "ligacao"), textoAuto: true, maquinas: o.mid ? [o.mid] : [] };
+    } else {
+      state.reg = { conclude: false, tipo: "visita", data: todayISO(), texto: "", maquinas: o.mid ? [o.mid] : [] };
+    }
     renderRegister();
-    setTimeout(() => { const t = $("#reg-text"); if (t) t.focus(); }, 0);
+    setTimeout(() => { const t = $("#reg-text"); if (t) { t.focus(); if (state.reg && state.reg.textoAuto) t.select(); } }, 0);
   }
   function captureRegister() {
     if (!state.reg) return;
@@ -1706,34 +1661,39 @@ details.fold[open] > summary { margin-bottom: 10px; }
     if (t) state.reg.texto = t.value;
   }
   function closeRegister() { state.reg = null; state.nextModal = null; clearAtt(); const m = $("#modal"); m.hidden = true; m.innerHTML = ""; }
+  const REG_DAYS = [{ n: -1, l: "Ontem" }, { n: 0, l: "Hoje" }, { n: 1, l: "Amanhã" }, { n: 7, l: "Em 7 dias" }, { n: 15, l: "Em 15 dias" }, { n: 30, l: "Em 30 dias" }];
   function renderRegister() {
     const m = $("#modal");
     const p = state.projects.get(state.selectedId);
     if (!state.reg || !p) { closeRegister(); return; }
     const r = state.reg;
     const nt = nextOf(p);
+    const future = r.data > todayISO();
     const tp = REG_TIPOS.find((x) => x.v === r.tipo) || REG_TIPOS[0];
-    const yday = addDays(-1);
+    let q = 0; const num = () => ++q;
+    const title = r.edit ? "Editar próximo passo" : future ? "Agendar atividade" : "Registrar atividade";
+    const hasM = machinesOf(p).length > 0;
     m.innerHTML = `<div class="modal-bg" data-action="reg-bg">
       <div class="modal" role="dialog" aria-modal="true" aria-labelledby="reg-h">
-        <div class="modal-h"><div><h2 id="reg-h">Registrar atividade</h2><div class="hint">${esc(p.titulo || "Sem nome")}</div></div><button class="icon-btn" data-action="reg-close" aria-label="Fechar">✕</button></div>
-        <div class="q"><span class="qn">1</span>O que você fez?</div>
-        <div class="type-grid" role="group" aria-label="Tipo de atividade">${REG_TIPOS.map((t) => `<button type="button" data-action="reg-tipo" data-v="${t.v}" aria-pressed="${t.v === r.tipo}"><b>${t.l}</b><span>${t.d}</span></button>`).join("")}</div>
-        <div class="q"><span class="qn">2</span>Quando?</div>
+        <div class="modal-h"><div><h2 id="reg-h">${title}</h2><div class="hint">${esc(p.titulo || "Sem nome")}</div></div><button class="icon-btn" data-action="reg-close" aria-label="Fechar">✕</button></div>
+        <div class="q"><span class="qn">${num()}</span>${future ? "O que vai ser feito?" : "O que você fez?"}</div>
+        <div class="type-grid" role="group" aria-label="Tipo de atividade">${REG_TIPOS.map((t) => `<button type="button" data-action="reg-tipo" data-v="${t.v}" aria-pressed="${t.v === r.tipo}"><b>${t.l}</b><span>${future ? t.df : t.d}</span></button>`).join("")}</div>
+        <div class="q"><span class="qn">${num()}</span>Quando?</div>
         <div class="quick">
-          <button type="button" class="chip" data-action="reg-day" data-v="${todayISO()}" aria-pressed="${r.data === todayISO()}">Hoje</button>
-          <button type="button" class="chip" data-action="reg-day" data-v="${yday}" aria-pressed="${r.data === yday}">Ontem</button>
+          ${REG_DAYS.map((d) => { const v = addDays(d.n); return `<button type="button" class="chip" data-action="reg-day" data-v="${v}" aria-pressed="${r.data === v}">${d.l}</button>`; }).join("")}
           <input class="field-in mono" type="date" id="reg-date" value="${esc(r.data)}" aria-label="Data">
         </div>
-        <div class="q"><span class="qn">3</span>Como foi?</div>
-        <textarea class="field-in" id="reg-text" rows="4" placeholder="${esc(tp.ph)}" aria-label="Como foi">${esc(r.texto)}</textarea>
-        ${nt ? `<label class="conclude"><input type="checkbox" id="reg-conclude" ${r.conclude ? "checked" : ""}><span>Isso conclui o próximo passo: <b>${esc(nt.texto)}</b> <span class="mono">(${esc(fmtDate(nt.prazo))})</span></span></label>` : ""}
-        ${machinesOf(p).length ? `<div class="q"><span class="qn">4</span>Em quais ${machCfg(p).ums}? <span class="opt">(opcional)</span></div>
-        <div class="quick">${machinesOf(p).map((m, i) => `<button type="button" class="chip" data-action="reg-mach" data-mid="${esc(m.id)}" aria-pressed="${(r.maquinas || []).includes(m.id)}">${esc(machineLabel(p, m, i))}</button>`).join("")}</div>` : ""}
-        <div class="q"><span class="qn">${machinesOf(p).length ? 5 : 4}</span>E o próximo passo?</div>
-        ${schedForm("rg", p, { allowNone: true, tipo: "contato", keep: nt && !r.conclude ? nt : null })}
-        ${attSection(machinesOf(p).length ? 6 : 5)}
-        <div class="modal-f"><span class="modal-err" id="modal-err" role="alert"></span><button class="btn ghost" data-action="reg-close">Cancelar</button><button class="btn primary" data-action="reg-save" id="reg-save-btn">Salvar</button></div>
+        ${future ? `<div class="future-box">Data futura: vai aparecer como <b>próximo passo</b> no topo do histórico${nt && !r.edit ? `, no lugar de “${esc(nt.texto)}” (${esc(fmtDate(nt.prazo))})` : ""}.</div>`
+          : r.edit ? `<div class="future-box">Data de hoje ou passada: o próximo passo será registrado como <b>feito</b> no histórico.</div>` : ""}
+        <div class="q"><span class="qn">${num()}</span>${future ? "Detalhes" : "Como foi?"}</div>
+        <textarea class="field-in" id="reg-text" rows="${future ? 2 : 4}" placeholder="${esc(future ? "O que precisa ser feito, quem procurar, o que levar…" : tp.ph)}" aria-label="${future ? "Detalhes" : "Como foi"}">${esc(r.texto)}</textarea>
+        ${nt && !future && !r.edit ? `<label class="conclude"><input type="checkbox" id="reg-conclude" ${r.conclude ? "checked" : ""}><span>Isso conclui o próximo passo: <b>${esc(nt.texto)}</b> <span class="mono">(${esc(fmtDate(nt.prazo))})</span></span></label>` : ""}
+        ${hasM ? `<div class="q"><span class="qn">${num()}</span>Em quais ${machCfg(p).ums}? <span class="opt">(opcional)</span></div>
+        <div class="quick">${machinesOf(p).map((mm, i) => `<button type="button" class="chip" data-action="reg-mach" data-mid="${esc(mm.id)}" aria-pressed="${(r.maquinas || []).includes(mm.id)}">${esc(machineLabel(p, mm, i))}</button>`).join("")}</div>` : ""}
+        ${future ? "" : `<div class="q"><span class="qn">${num()}</span>E o próximo passo?</div>
+        ${schedForm("rg", p, { allowNone: true, tipo: "ligacao", keep: nt && !r.conclude && !r.edit ? nt : null })}`}
+        ${attSection(num())}
+        <div class="modal-f"><span class="modal-err" id="modal-err" role="alert"></span><button class="btn ghost" data-action="reg-close">Cancelar</button><button class="btn primary" data-action="reg-save" id="reg-save-btn">${future && !r.edit ? "Agendar" : "Salvar"}</button></div>
       </div></div>`;
     m.hidden = false;
   }
@@ -1742,29 +1702,58 @@ details.fold[open] > summary { margin-bottom: 10px; }
     captureRegister();
     const r = state.reg;
     const nt = nextOf(p);
-    const conclude = !!(nt && $("#reg-conclude") && $("#reg-conclude").checked);
+    const future = r.data > todayISO();
     const texto = (r.texto || "").trim();
-    if (!texto && !conclude && !state.att.length) { toast("Escreva como foi."); $("#reg-text").focus(); return; }
-    const n = readSched("rg"); if (n === false) return;
+    const me = state.myId || "";
     const btn = $("#reg-save-btn");
+    const label = btn ? btn.textContent : "Salvar";
+    let n = null;
+    let conclude = false;
+    if (future) {
+      if (!texto) { toast("Escreva o que vai ser feito."); $("#reg-text").focus(); return; }
+    } else {
+      conclude = r.edit ? !!nt : !!(nt && $("#reg-conclude") && $("#reg-conclude").checked);
+      if (!texto && !conclude && !state.att.length) { toast("Escreva como foi."); $("#reg-text").focus(); return; }
+      n = readSched("rg"); if (n === false) return;
+    }
     let anexos = [];
     if (state.att.length) {
       state.saving = true; if (btn) btn.disabled = true;
       try { anexos = await uploadPending(id, btn); }
-      catch (e) { state.saving = false; if (btn) { btn.disabled = false; btn.textContent = "Salvar"; } toast(attError(e)); return; }
+      catch (e) { state.saving = false; if (btn) { btn.disabled = false; btn.textContent = label; } toast(attError(e)); return; }
       state.saving = false;
     }
-    const entry = { id: rid(), data: r.data || todayISO(), tipo: r.tipo, texto: conclude ? nt.texto + (texto ? "\n" + texto : "") : texto, autor: state.myId || "" };
-    if (conclude) { entry.prazoOriginal = nt.prazo; anexos = (nt.anexos || []).concat(anexos); }
+    const removed = state.attRemoved.slice();
+    if (future) {
+      const keepOld = r.edit && nt;
+      const step = { id: keepOld ? nt.id : rid(), tipo: r.tipo, texto, prazo: r.data, criado: keepOld ? nt.criado : todayISO(), autor: keepOld ? (nt.autor || me) : me };
+      if ((r.maquinas || []).length) step.maquinas = r.maquinas.slice();
+      if (anexos.length) step.anexos = anexos;
+      const replacedFiles = !r.edit && nt ? (nt.anexos || []) : [];
+      p.proximo = step;
+      const auto = applyAutomation(p, { tipo: null, maquinas: [], next: step });
+      closeRegister();
+      state.tab = "historico";
+      changed(id, ["proximo"].concat(auto.fields), { detail: true, now: true });
+      removeFiles(removed.concat(replacedFiles));
+      const base = r.edit ? "Próximo passo atualizado." : `Agendado para ${fmtDate(step.prazo)}.`;
+      toast(auto.msgs.length ? `${base} Atualizado: ${auto.msgs.join(", ")}.` : base);
+      return;
+    }
+    const entry = { id: rid(), data: r.data || todayISO(), tipo: r.tipo, texto: conclude && !r.edit ? nt.texto + (texto ? "\n" + texto : "") : texto, autor: me };
+    if (conclude) { entry.prazoOriginal = nt.prazo; if (!r.edit) anexos = (nt.anexos || []).concat(anexos); }
     if ((r.maquinas || []).length) entry.maquinas = r.maquinas.slice();
     if (anexos.length) entry.anexos = anexos;
     p.diario = (p.diario || []).concat([entry]);
     const fields = ["diario"];
     if (n !== "keep") { p.proximo = n || null; fields.push("proximo"); }
+    else if (conclude) { p.proximo = null; fields.push("proximo"); }
     const auto = applyAutomation(p, { tipo: r.tipo, maquinas: entry.maquinas || [], next: n && n !== "keep" ? n : null });
     auto.fields.forEach((f) => { if (!fields.includes(f)) fields.push(f); });
     closeRegister();
+    state.tab = "historico";
     changed(id, fields, { detail: true, now: true });
+    removeFiles(removed);
     const base = n && n !== "keep" ? `Registrado. Próximo passo em ${fmtDate(n.prazo)}.` : "Registrado no histórico.";
     toast(auto.msgs.length ? `${base} Atualizado: ${auto.msgs.join(", ")}.` : base);
   }
@@ -1780,7 +1769,7 @@ details.fold[open] > summary { margin-bottom: 10px; }
     if (state.view !== "agenda") return;
     const act = activeProjects();
     let items = act.filter(([, p]) => nextOf(p)).map(([id, p]) => ({ id, p, n: nextOf(p) }));
-    if (state.agendaTipo === "contato") items = items.filter((x) => x.n.tipo === "contato");
+    if (state.agendaTipo === "contato") items = items.filter((x) => CONTACT_TYPES.has(x.n.tipo));
     items.sort((a, b) => (a.n.prazo < b.n.prazo ? -1 : a.n.prazo > b.n.prazo ? 1 : 0));
     const sem = act.filter(([, p]) => !nextOf(p));
     const row = (x) => {
@@ -1788,7 +1777,7 @@ details.fold[open] > summary { margin-bottom: 10px; }
       const tel = p.tipo === "homologacao" ? p.contatoTel : "";
       return `<div class="arow">
         <span class="ad ${dueClass(n.prazo)}">${fmtDate(n.prazo)}<small>${esc(relDay(n.prazo))}</small></span>
-        <div class="at"><span class="tag ${esc(n.tipo)}">${esc(NEXT_LABEL[n.tipo] || "Tarefa")}</span>${esc(n.texto)}
+        <div class="at"><span class="tag ${esc(n.tipo)}">${esc(actLabel(n.tipo))}</span>${esc(n.texto)}
           <div class="sub">${esc(p.titulo || "Sem nome")}${p.cliente ? " · " + esc(p.cliente) : ""}${tel ? ` · <span class="mono">${esc(tel)}</span>` : ""}</div></div>
         <button class="btn sm" data-action="open" data-id="${esc(x.id)}">Abrir</button>
       </div>`;
@@ -1950,7 +1939,7 @@ details.fold[open] > summary { margin-bottom: 10px; }
       if (it) { if (it.url) URL.revokeObjectURL(it.url); if (it.meta) state.attRemoved.push(it.meta); }
       state.att = state.att.filter((x) => x.key !== k); renderAttList(); return;
     }
-    if (a === "reg-open") { openRegister(b.dataset.conclude === "1", b.dataset.mid); return; }
+    if (a === "reg-open") { openRegister({ conclude: b.dataset.conclude === "1", mid: b.dataset.mid }); return; }
     if (a === "reg-mach") {
       const mid = b.dataset.mid; const on = b.getAttribute("aria-pressed") !== "true";
       b.setAttribute("aria-pressed", String(on));
@@ -1958,9 +1947,9 @@ details.fold[open] > summary { margin-bottom: 10px; }
       return;
     }
     if (a === "reg-close") { closeRegister(); return; }
-    if (a === "reg-bg") { if (ev.target === b) { const t = $("#reg-text") || $("#np-texto"); if (t) t.focus(); } return; }
-    if (a === "reg-tipo") { captureRegister(); state.reg.tipo = b.dataset.v; b.parentElement.querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", String(x === b))); const tp = REG_TIPOS.find((x) => x.v === b.dataset.v); const t = $("#reg-text"); if (t && tp) t.placeholder = tp.ph; return; }
-    if (a === "reg-day") { $("#reg-date").value = b.dataset.v; b.parentElement.querySelectorAll(".chip").forEach((x) => x.setAttribute("aria-pressed", String(x === b))); return; }
+    if (a === "reg-bg") { if (ev.target === b) { const t = $("#reg-text"); if (t) t.focus(); } return; }
+    if (a === "reg-tipo") { captureRegister(); state.reg.tipo = b.dataset.v; if (state.reg.textoAuto) { const pp = state.projects.get(state.selectedId); const tt = $("#reg-text"); if (pp && tt) { tt.value = defaultNextText(pp, b.dataset.v); state.reg.texto = tt.value; } } b.parentElement.querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", String(x === b))); const tp = REG_TIPOS.find((x) => x.v === b.dataset.v); const t = $("#reg-text"); if (t && tp) t.placeholder = tp.ph; return; }
+    if (a === "reg-day") { captureRegister(); state.reg.data = b.dataset.v; renderRegister(); return; }
     if (a === "reg-save") { saveRegister(); return; }
     if (a === "new") { state.view = "projetos"; renderView(); $("#newform").hidden = false; $("#app").classList.remove("show-detail"); setTimeout(() => $("#nf-titulo").focus(), 0); return; }
     if (a === "nf-tipo") { state.newTipo = b.dataset.v; document.querySelectorAll('[data-action="nf-tipo"]').forEach((x) => x.setAttribute("aria-pressed", String(x.dataset.v === state.newTipo))); return; }
@@ -2037,8 +2026,7 @@ details.fold[open] > summary { margin-bottom: 10px; }
     if (a === "stage-done") { setPending(id, b.dataset.v, false); return; }
     if (a === "stage-pend") { setPending(id, b.dataset.v, true); return; }
 
-    if (a === "next-open") { openNext(b.dataset.edit === "1"); return; }
-    if (a === "next-save") { saveNext(id, p); return; }
+    if (a === "next-open") { openRegister(b.dataset.edit === "1" ? { edit: true } : { future: true }); return; }
     if (a === "next-drop") { const old = nextOf(p); p.proximo = null; changed(id, ["proximo"], { detail: true, now: true }); if (old) removeFiles(old.anexos); return; }
     if (a === "ck-set" || a === "ck-del" || a === "ck-template" || a === "ck-add") {
       const m = getMachine(p, b.dataset.mid); if (!m) return;
@@ -2103,6 +2091,7 @@ details.fold[open] > summary { margin-bottom: 10px; }
     const t = ev.target;
     if (t.id === "f-q") { state.filter.q = t.value; renderList(); return; }
     if (t.id === "reg-date") { document.querySelectorAll('[data-action="reg-day"]').forEach((x) => x.setAttribute("aria-pressed", String(x.dataset.v === t.value))); return; }
+    if (t.id === "reg-text" && state.reg) { state.reg.textoAuto = false; }
     if (/-texto$/.test(t.id) && t.dataset.auto) { t.dataset.auto = "0"; return; }
     if (/-prazo$/.test(t.id) && t.dataset.prefix) {
       const pre = t.dataset.prefix;
@@ -2147,6 +2136,13 @@ details.fold[open] > summary { margin-bottom: 10px; }
   document.addEventListener("change", (ev) => {
     const t = ev.target;
     if (t.id === "att-input") { addAttFiles(t.files); t.value = ""; return; }
+    if (t.id === "reg-date" && state.reg) { const was = state.reg.data > todayISO(); captureRegister(); if ((state.reg.data > todayISO()) !== was) renderRegister(); return; }
+    if (t.dataset.schedTipo) {
+      const pre = t.dataset.prefix; const pp = state.projects.get(state.selectedId); if (!pp) return;
+      const kp = $("#" + pre + "-keep"); if (kp && kp.value === "1") { kp.value = "0"; $("#" + pre + "-sched").classList.remove("off"); document.querySelectorAll(`#${pre}-sched [data-action="sched-keep"]`).forEach((x) => x.setAttribute("aria-pressed", "false")); const d7 = document.querySelector(`#${pre}-sched [data-action="sched-days"][data-v="7"]`); if (d7) { d7.setAttribute("aria-pressed", "true"); $("#" + pre + "-prazo").value = addDays(7); } }
+      const tx = $("#" + pre + "-texto"); if (tx && tx.dataset.auto === "1") tx.value = defaultNextText(pp, t.value);
+      return;
+    }
     if (t.id === "reg-conclude") { captureRegister(); state.reg.conclude = t.checked; renderRegister(); return; }
     if (t.id === "cover-file") { const id = state.selectedId; if (id && t.files && t.files[0]) handleCoverFile(id, t.files[0]); t.value = ""; return; }
     if (t.id === "f-status") { state.filter.status = t.value; renderList(); return; }
@@ -2177,7 +2173,6 @@ details.fold[open] > summary { margin-bottom: 10px; }
     const t = ev.target;
     const id = state.selectedId; const p = id && state.projects.get(id);
     if (t.id === "ck-new") { ev.preventDefault(); const m = p && getMachine(p, t.dataset.mid); if (m) addItem(p, id, m); }
-    if (t.id === "np-texto") { ev.preventDefault(); const bt = document.querySelector('[data-action="next-save"]'); bt && bt.click(); }
     if (t.id === "nf-titulo") { ev.preventDefault(); document.querySelector('[data-action="nf-create"]').click(); }
   });
   document.addEventListener("focusout", () => {

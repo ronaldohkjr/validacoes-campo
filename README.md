@@ -16,7 +16,7 @@ Para configurar o site e cadastrar pessoas, veja [docs/CONFIGURAR.md](docs/CONFI
 ## O que o app faz
 
 - **Jornada** por etapas (Primeiro contato → Visita agendada → Instalação → Homologação → Entrega e treinamento → Acompanhamento em campo → Acompanhamento pós-entrega → Encerrado; a validação de engenharia tem etapas próprias), com data de cada mudança. Uma etapa pode ficar **pendente** mesmo com o projeto já mais à frente, e ser concluída depois.
-- **Um próximo passo por vez** (ex.: "entrar em contato daqui 7 dias"), agendado pelo botão **+ Próximo passo**. Ao concluir, você registra como foi e já agenda o seguinte. O próximo passo aparece no topo do Histórico, como o item mais à frente da linha do tempo.
+- **Próximo passo = atividade com data futura**: o mesmo formulário de Registrar atividade; escolhendo uma data à frente (Amanhã, Em 7/15/30 dias ou outra), ela vira o próximo passo e aparece no topo do Histórico. Ao concluir ("Feito — registrar como foi"), você anota como foi e já agenda o seguinte.
 - **Cliente no centro, com várias máquinas**: cada projeto é um cliente; a aba **Máquinas** guarda cada máquina instalada, com dados, situação (aguardando instalação → instalada → homologada → entregue) e checklist próprios. Atividades podem ser ligadas às máquinas. Em validação, são **Unidades de teste**.
 - **Automático**: registrar uma atividade avança a jornada e a situação das máquinas:
   - Agendar próximo passo do tipo Visita (no Primeiro contato) → *Visita agendada*
