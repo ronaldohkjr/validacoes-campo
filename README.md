@@ -17,6 +17,7 @@ Para configurar o site e cadastrar pessoas, veja [docs/CONFIGURAR.md](docs/CONFI
 
 - **Jornada** por etapas (Primeiro contato → Visita agendada → Instalação → Homologação → Entrega e treinamento → Acompanhamento em campo → Acompanhamento pós-entrega → Encerrado; a validação de engenharia tem etapas próprias), com data de cada mudança. Uma etapa pode ficar **pendente** mesmo com o projeto já mais à frente, e ser concluída depois.
 - **Um próximo passo por vez** (ex.: "entrar em contato daqui 7 dias"), agendado pelo botão **+ Próximo passo**. Ao concluir, você registra como foi e já agenda o seguinte. A aba Próximo passo mostra o atual e a lista dos já concluídos.
+- **Cliente no centro, com várias máquinas**: cada projeto é um cliente; a aba **Máquinas** guarda cada máquina instalada, com dados, situação (aguardando instalação → instalada → homologada → entregue) e checklist próprios. Atividades podem ser ligadas às máquinas. Em validação, são **Unidades de teste**.
 - **Painel inicial** em cartões, com imagem de capa, etapa da jornada e próximo passo de cada projeto, ou em colunas **por etapa**.
 - **Agenda**: o próximo passo de cada projeto, separado em atrasados, hoje, próximos 7 dias e mais adiante, além dos projetos sem próximo passo.
 - **Abas separadas** em cada projeto: Próximo passo, Histórico, Checklist e Dados.
@@ -44,4 +45,5 @@ Cada projeto é uma linha da tabela `projects` (campo `data`, JSON) no Supabase,
 - `etapa`, `etapasHist[]`, `etapasPend[]`: etapa atual, histórico de mudanças e etapas que ficaram pendentes
 - `proximo`: `{texto, tipo: "contato" | "visita" | "tarefa", prazo, criado, autor}` ou `null`
 - `diario[]`: `{data, tipo, texto, autor}`
-- `checklist[]`: `{grupo, texto, status: "pendente" | "ok" | "falha" | "na", nota}`
+- `maquinas[]`: `{fabricante, modelo, ano, serie, produto, versaoSw, versaoHw, situacao, checklist[]}` (em validação: `{nome, serie, versaoHw, local, situacao, checklist[]}`)
+- `checklist[]` (de cada máquina): `{grupo, texto, status: "pendente" | "ok" | "falha" | "na", nota}`

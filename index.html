@@ -365,7 +365,7 @@ details.fold[open] > summary { margin-bottom: 10px; }
 .placeholder { padding: 48px 24px; text-align: center; color: var(--muted); display: flex; flex-direction: column; gap: 8px; align-items: center; }
 .placeholder strong { color: var(--ink); font-family: var(--f-display); font-size: 22px; font-weight: 600; }
 
-.app.ro [data-action="new"], .app.ro .cv-actions, .app.ro [data-action="next-open"], .app.ro .reg-btn, .app.ro [data-action="reg-open"], .app.ro .add-row, .app.ro .log-add, .app.ro .box, .app.ro .nc-actions, .app.ro .suggest,
+.app.ro [data-action="new"], .app.ro [data-action="m-add"], .app.ro [data-action="m-del-ask"], .app.ro .cv-actions, .app.ro [data-action="next-open"], .app.ro .reg-btn, .app.ro [data-action="reg-open"], .app.ro .add-row, .app.ro .log-add, .app.ro .box, .app.ro .nc-actions, .app.ro .suggest,
 .app.ro [data-action="ck-del"], .app.ro [data-action="log-del"], .app.ro [data-action="del-ask"], .app.ro [data-action="ck-template"], .app.ro [data-action="agenda-sched"] { display: none; }
 
 /* Agenda rows */
@@ -447,6 +447,30 @@ details.fold[open] > summary { margin-bottom: 10px; }
 .att-file { display: inline-grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 6px; align-items: center; max-width: 260px; border: 1px solid var(--line); background: var(--raised); border-radius: 6px; padding: 5px 8px; color: var(--ink); text-decoration: none; }
 .att-file:hover { border-color: var(--accent); }
 .att-file .ext { height: 22px; display: grid; place-items: center; min-width: 30px; }
+.machines { display: flex; flex-direction: column; gap: 8px; }
+.mach { border: 1px solid var(--line); border-radius: 8px; background: var(--raised); min-width: 0; }
+.mach.open { border-color: var(--accent); }
+.mach-h { width: 100%; display: grid; grid-template-columns: 28px minmax(0, 1fr) auto 16px; gap: 10px; align-items: center; border: 0; background: transparent; text-align: left; padding: 10px 12px; }
+.mach-n { width: 26px; height: 26px; border-radius: 50%; background: var(--accent-soft); color: var(--accent); display: grid; place-items: center; font-size: 12px; font-weight: 600; }
+.mach-t { display: flex; flex-direction: column; min-width: 0; }
+.mach-t b { font-size: 14.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mach-t span { font-size: 12.5px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mach-s { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--muted); flex-wrap: wrap; justify-content: flex-end; }
+.chev { color: var(--muted); }
+.mach-b { border-top: 1px solid var(--line); padding: 12px 14px 16px; display: flex; flex-direction: column; gap: 10px; }
+.mach-row { display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap; }
+.mach-row label { display: flex; flex-direction: column; gap: 3px; font-size: 11px; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); }
+.mach-row select { min-width: 200px; }
+.mach-row .spacer { flex: 1; }
+.msum { font-size: 12px; color: var(--muted); }
+.mtags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; white-space: normal; }
+.mtag { font-size: 11px; border: 1px solid var(--line); background: var(--surface); border-radius: 4px; padding: 0 6px; color: var(--muted); }
+.tag.maquina { background: transparent; color: var(--info); border: 1px solid var(--info); }
+.side-m { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.link-row { width: 100%; display: flex; justify-content: space-between; align-items: center; gap: 8px; border: 0; background: transparent; padding: 4px 0; text-align: left; font-size: 13px; }
+.link-row span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.link-row:hover span:first-child { text-decoration: underline; text-underline-offset: 2px; }
+.link-row .pill { font-size: 10.5px; flex: none; }
 .hist-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
 
 /* Register activity dialog */
@@ -496,6 +520,9 @@ details.fold[open] > summary { margin-bottom: 10px; }
   .tabs { flex: 1 1 100%; }
   .detail, .agenda { padding: 14px; }
   .type-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .mach-h { grid-template-columns: 26px minmax(0, 1fr) 16px; }
+  .mach-s { grid-column: 2 / 3; justify-content: flex-start; }
+  .mach-row select { min-width: 0; }
   .type-grid button:last-child { grid-column: 1 / -1; }
   .modal { padding: 14px; }
   .ck { grid-template-columns: minmax(0, 1fr) auto; }
@@ -621,7 +648,7 @@ details.fold[open] > summary { margin-bottom: 10px; }
     { v: "teste", l: "Teste" },
     { v: "nota", l: "Anotação" },
   ];
-  const LOG_LABEL = { visita: "Visita", ligacao: "Ligação", mensagem: "Mensagem", teste: "Teste", nota: "Nota", etapa: "Etapa", feito: "Feito" };
+  const LOG_LABEL = { visita: "Visita", ligacao: "Ligação", mensagem: "Mensagem", teste: "Teste", nota: "Nota", etapa: "Etapa", feito: "Feito", maquina: "Máquina" };
 
   const FIELDS = {
     homologacao: [
@@ -630,13 +657,6 @@ details.fold[open] > summary { margin-bottom: 10px; }
       { k: "cidade", l: "Cidade / UF" },
       { k: "contato", l: "Contato no cliente" },
       { k: "contatoTel", l: "Telefone / WhatsApp", mono: true },
-      { k: "maqFabricante", l: "Fabricante da máquina" },
-      { k: "maqModelo", l: "Modelo da máquina" },
-      { k: "maqAno", l: "Ano", mono: true },
-      { k: "maqSerie", l: "Nº de série / chassi", mono: true },
-      { k: "produto", l: "Nosso produto / kit" },
-      { k: "versaoSw", l: "Versão de software", mono: true },
-      { k: "versaoHw", l: "Revisão de hardware", mono: true },
       { k: "dataVisita", l: "Data da visita", t: "date" },
       { k: "prazo", l: "Prazo de entrega", t: "date" },
       { k: "obs", l: "Observações gerais", t: "area", wide: true },
@@ -696,15 +716,60 @@ details.fold[open] > summary { margin-bottom: 10px; }
     Object.keys(t).forEach((g) => t[g].forEach((txt) => out.push({ id: rid(), grupo: g, texto: txt, status: "pendente", nota: "" })));
     return out;
   }
-  function counts(p) {
+  /* Machines installed at the client (homologação) or test units (validação), each with its own status and checklist */
+  const MACH = {
+    homologacao: {
+      nome: "Máquinas", um: "máquina", ums: "máquinas", add: "+ Adicionar máquina",
+      sit: [{ v: "aguardando", l: "Aguardando instalação", lp: "aguardando instalação" }, { v: "instalada", l: "Instalada", lp: "instaladas" }, { v: "homologada", l: "Homologada", lp: "homologadas" }, { v: "entregue", l: "Entregue / treinada", lp: "entregues / treinadas" }, { v: "problema", l: "Com problema", lp: "com problema" }],
+      fields: [{ k: "fabricante", l: "Fabricante" }, { k: "modelo", l: "Modelo" }, { k: "ano", l: "Ano", mono: true }, { k: "serie", l: "Nº de série / chassi", mono: true }, { k: "produto", l: "Nosso produto / kit" }, { k: "versaoSw", l: "Versão de software", mono: true }, { k: "versaoHw", l: "Revisão de hardware", mono: true }, { k: "obs", l: "Observações", t: "area", wide: true }],
+    },
+    validacao: {
+      nome: "Unidades de teste", um: "unidade", ums: "unidades", add: "+ Adicionar unidade",
+      sit: [{ v: "aguardando", l: "Aguardando teste", lp: "aguardando teste" }, { v: "testando", l: "Em teste", lp: "em teste" }, { v: "aprovada", l: "Aprovada", lp: "aprovadas" }, { v: "reprovada", l: "Reprovada", lp: "reprovadas" }],
+      fields: [{ k: "nome", l: "Identificação" }, { k: "serie", l: "Nº de série", mono: true }, { k: "versaoHw", l: "Revisão de hardware", mono: true }, { k: "local", l: "Máquina / local do teste" }, { k: "obs", l: "Observações", t: "area", wide: true }],
+    },
+  };
+  const SIT_CLS = { aguardando: "st-planejado", instalada: "st-agendado", testando: "st-agendado", homologada: "st-andamento", entregue: "st-aprovado", aprovada: "st-aprovado", problema: "st-reprovado", reprovada: "st-reprovado" };
+  const machCfg = (p) => MACH[p.tipo] || MACH.homologacao;
+  function legacySit(p) {
+    if (p.tipo !== "homologacao") return "testando";
+    const i = JORNADA.homologacao.findIndex((s) => s.k === (p.etapa || "contato"));
+    return i < 2 ? "aguardando" : i < 4 ? "instalada" : "entregue";
+  }
+  function machinesOf(p) {
+    if (Array.isArray(p.maquinas)) return p.maquinas;
+    const legacyHom = p.tipo === "homologacao" && (p.maqFabricante || p.maqModelo || p.maqSerie || p.maqAno);
+    if (!legacyHom && !(p.checklist || []).length) return [];
+    // older projects: the single machine kept in the project fields becomes machine 1
+    return [p.tipo === "homologacao"
+      ? { id: "m1", fabricante: p.maqFabricante || "", modelo: p.maqModelo || "", ano: p.maqAno || "", serie: p.maqSerie || "", produto: p.produto || "", versaoSw: p.versaoSw || "", versaoHw: p.versaoHw || "", situacao: legacySit(p), checklist: p.checklist || [] }
+      : { id: "m1", nome: "Unidade 1", serie: "", versaoHw: p.versaoHw || "", local: p.ambiente || "", situacao: "testando", checklist: p.checklist || [] }];
+  }
+  function ensureMachines(p) { if (!Array.isArray(p.maquinas)) p.maquinas = clone(machinesOf(p)); return p.maquinas; }
+  function getMachine(p, mid) { return ensureMachines(p).find((m) => m.id === mid) || null; }
+  function machineLabel(p, m, i) {
+    if (p.tipo === "homologacao") return [m.fabricante, m.modelo, m.ano].filter(Boolean).join(" ") || `Máquina ${i + 1}`;
+    return m.nome || `Unidade ${i + 1}`;
+  }
+  const sitLabel = (p, v) => ((machCfg(p).sit.find((x) => x.v === v) || machCfg(p).sit[0]).l);
+  function machinesSummary(p) {
+    const ms = machinesOf(p); if (!ms.length) return "";
+    const cfg = machCfg(p);
+    const by = {};
+    ms.forEach((m) => { const v = m.situacao || "aguardando"; by[v] = (by[v] || 0) + 1; });
+    return `${ms.length} ${ms.length > 1 ? cfg.ums : cfg.um}: ` + cfg.sit.filter((x) => by[x.v]).map((x) => `${by[x.v]} ${by[x.v] > 1 ? x.lp : x.l.toLowerCase()}`).join(", ");
+  }
+  function countList(list) {
     const c = { ok: 0, falha: 0, na: 0, pendente: 0, total: 0 };
-    (p.checklist || []).forEach((i) => { c[i.status] = (c[i.status] || 0) + 1; c.total++; });
+    (list || []).forEach((i) => { c[i.status] = (c[i.status] || 0) + 1; c.total++; });
     return c;
   }
+  function counts(p) { return countList([].concat(...machinesOf(p).map((m) => m.checklist || []))); }
   function subline(p) {
     if (p.tipo === "homologacao") {
-      const maq = [p.maqFabricante, p.maqModelo].filter(Boolean).join(" ");
-      return [p.cliente, maq, p.produto].filter(Boolean).join(" · ") || "Sem cliente informado";
+      const ms = machinesOf(p);
+      const maq = ms.length === 1 ? machineLabel(p, ms[0], 0) : ms.length > 1 ? `${ms.length} máquinas` : "";
+      return [p.cliente, p.cidade, maq].filter(Boolean).join(" · ") || "Sem cliente informado";
     }
     return [p.produto, p.versaoSw, p.versaoHw && "HW " + p.versaoHw].filter(Boolean).join(" · ") || "Sem produto informado";
   }
@@ -859,6 +924,8 @@ details.fold[open] > summary { margin-bottom: 10px; }
     confirmDelete: false,
     stagePanel: null,
     reg: null,
+    openMachine: null,
+    mDelAsk: null,
     att: [],
     saving: false,
     attRemoved: [],
@@ -1095,7 +1162,8 @@ details.fold[open] > summary { margin-bottom: 10px; }
       .filter((p) => f.status === "todos" || (f.status === "ativos" ? !CLOSED.has(p.status) : p.status === f.status))
       .filter((p) => {
         if (!q) return true;
-        const hay = [p.titulo, p.cliente, p.fazenda, p.cidade, p.contato, p.maqFabricante, p.maqModelo, p.maqSerie, p.produto, p.versaoSw, p.versaoHw, p.release, p.engenharia].join(" ").toLowerCase();
+        const hay = [p.titulo, p.cliente, p.fazenda, p.cidade, p.contato, p.produto, p.versaoSw, p.versaoHw, p.release, p.engenharia]
+          .concat(...machinesOf(p).map((m) => [m.fabricante, m.modelo, m.ano, m.serie, m.produto, m.versaoSw, m.versaoHw, m.nome, m.local])).join(" ").toLowerCase();
         return hay.includes(q);
       })
       .sort((a, b) => {
@@ -1115,7 +1183,8 @@ details.fold[open] > summary { margin-bottom: 10px; }
     return `<div class="sbar" aria-hidden="true">${stages(p).map((st, i) => `<i class="${i < si && pendSet.has(st.k) ? "pend" : i < si ? "on" : i === si ? "cur" : ""}"></i>`).join("")}</div>`;
   }
   function coverPlaceholder(p) {
-    const t = p.tipo === "homologacao" ? [p.maqFabricante, p.maqModelo].filter(Boolean).join(" ") || p.cliente : p.produto || p.versaoSw;
+    const ms = machinesOf(p);
+    const t = p.tipo === "homologacao" ? p.cliente || (ms[0] ? machineLabel(p, ms[0], 0) : "") : p.produto || p.versaoSw;
     return `<span class="ph">${esc(t || (p.titulo || "").split(/[—-]/)[0])}</span>`;
   }
   function projectCard(p) {
@@ -1134,6 +1203,7 @@ details.fold[open] > summary { margin-bottom: 10px; }
       <div class="card-body">
         <h3>${esc(p.titulo || "Sem nome")}</h3>
         <div class="sub">${esc(subline(p))}</div>
+        ${machinesOf(p).length > 1 ? `<div class="msum">${esc(machinesSummary(p))}</div>` : ""}
         ${stageBar(p)}
         <div class="sl"><b>${esc(stageLabel(p))}</b><span class="n">${si + 1}/${stages(p).length}</span>${nPend ? `<span class="today">${nPend} pendente${nPend > 1 ? "s" : ""}</span>` : ""}${c.falha ? `<span class="late">${c.falha} falha${c.falha > 1 ? "s" : ""}</span>` : ""}</div>
         ${nx}
@@ -1299,47 +1369,108 @@ details.fold[open] > summary { margin-bottom: 10px; }
     setTimeout(() => { const t = $("#np-texto"); if (t) { t.focus(); t.select(); } }, 0);
   }
 
+  function machTags(p, ids) {
+    if (!ids || !ids.length) return "";
+    const ms = machinesOf(p);
+    const tags = ids.map((id) => { const i = ms.findIndex((m) => m.id === id); return i >= 0 ? machineLabel(p, ms[i], i) : ""; }).filter(Boolean);
+    return tags.length ? `<span class="mtags">${tags.map((t) => `<span class="mtag">${esc(t)}</span>`).join("")}</span>` : "";
+  }
   function tabHistorico(p) {
     const diario = (p.diario || []).map((e, i) => Object.assign({ _i: i }, e)).sort((a, b) => (a.data < b.data ? 1 : a.data > b.data ? -1 : b._i - a._i));
     const log = diario.length
       ? diario.map((e) => {
           const tipo = e.tipo || "nota";
           return `<div class="entry ${e.auto ? "auto" : ""}"><span class="when">${esc(fmtDate(e.data))}${e.autor ? `<span class="by" data-uid="${esc(e.autor)}"></span>` : ""}</span>
-          <span class="what"><span class="tag ${esc(tipo)}">${esc(LOG_LABEL[tipo] || "Nota")}</span>${esc(e.texto)}${attHtml(e.anexos)}</span>
-          ${e.auto && (e.tipo !== "etapa" || e.texto === "Projeto criado") ? "<span></span>" : `<button class="icon-btn" data-action="log-del" data-entry="${esc(e.id)}" aria-label="Apagar registro" title="Apagar registro">×</button>`}</div>`;
+          <span class="what"><span class="tag ${esc(tipo)}">${esc(LOG_LABEL[tipo] || "Nota")}</span>${esc(e.texto)}${machTags(p, e.maquinas)}${attHtml(e.anexos)}</span>
+          ${e.auto && ((e.tipo !== "etapa" && e.tipo !== "maquina") || e.texto === "Projeto criado") ? "<span></span>" : `<button class="icon-btn" data-action="log-del" data-entry="${esc(e.id)}" aria-label="Apagar registro" title="Apagar registro">×</button>`}</div>`;
         }).join("")
       : `<div class="entry"><span class="when">—</span><span class="what" style="color:var(--muted)">Nenhum registro ainda. Use “Registrar atividade” para anotar uma visita, ligação ou teste.</span><span></span></div>`;
     return `<div class="hist-head"><p class="hint">Tudo o que já foi feito, do mais recente para o mais antigo.</p><button class="btn primary" data-action="reg-open">+ Registrar atividade</button></div>
       <div class="log">${log}</div>`;
   }
 
-  function tabChecklist(p) {
-    const c = counts(p);
+  function checklistHtml(p, m) {
+    const c = countList(m.checklist);
     const w = (n) => (c.total ? ((n / c.total) * 100).toFixed(1) : 0) + "%";
     const groups = [];
     const byGroup = {};
-    (p.checklist || []).forEach((it) => { const g = it.grupo || "Geral"; if (!byGroup[g]) { byGroup[g] = []; groups.push(g); } byGroup[g].push(it); });
+    (m.checklist || []).forEach((it) => { const g = it.grupo || "Geral"; if (!byGroup[g]) { byGroup[g] = []; groups.push(g); } byGroup[g].push(it); });
+    const mid = esc(m.id);
     const ck = groups.map((g) => `<div class="group"><div class="group-h">${esc(g)}</div>${byGroup[g].map((it) => {
       const showNote = state.openNotes.has(it.id) || it.nota || it.status === "falha";
-      const b = (v, l, cls) => `<button data-action="ck-set" data-item="${esc(it.id)}" data-v="${v}" class="${it.status === v ? cls : ""}" aria-pressed="${it.status === v}">${l}</button>`;
+      const b = (v, l, cls) => `<button data-action="ck-set" data-mid="${mid}" data-item="${esc(it.id)}" data-v="${v}" class="${it.status === v ? cls : ""}" aria-pressed="${it.status === v}">${l}</button>`;
       return `<div class="ck s-${it.status === "falha" ? "fail" : it.status}">
         <span class="txt">${esc(it.texto)}</span>
         <span class="tri" role="group" aria-label="Resultado">${b("ok", "OK", "on-ok")}${b("falha", "Falha", "on-fail")}${b("na", "N.A.", "on-na")}</span>
-        <span><button class="icon-btn ${it.nota ? "has" : ""}" data-action="ck-note" data-item="${esc(it.id)}" title="Observação" aria-label="Observação">✎</button><button class="icon-btn" data-action="ck-del" data-item="${esc(it.id)}" title="Remover item" aria-label="Remover item">×</button></span>
-        ${showNote ? `<div class="note"><input class="field-in" id="nt-${esc(it.id)}" data-note="${esc(it.id)}" value="${esc(it.nota)}" placeholder="${it.status === "falha" ? "Descreva a falha, como reproduzir, nº do ticket…" : "Observação"}"></div>` : ""}
+        <span><button class="icon-btn ${it.nota ? "has" : ""}" data-action="ck-note" data-mid="${mid}" data-item="${esc(it.id)}" title="Observação" aria-label="Observação">✎</button><button class="icon-btn" data-action="ck-del" data-mid="${mid}" data-item="${esc(it.id)}" title="Remover item" aria-label="Remover item">×</button></span>
+        ${showNote ? `<div class="note"><input class="field-in" id="nt-${esc(it.id)}" data-note="${esc(it.id)}" data-mid="${mid}" value="${esc(it.nota)}" placeholder="${it.status === "falha" ? "Descreva a falha, como reproduzir, nº do ticket…" : "Observação"}"></div>` : ""}
       </div>`;
     }).join("")}</div>`).join("");
     const groupOpts = Array.from(new Set(groups.concat(Object.keys(TEMPLATES[p.tipo] || {})).concat(["Geral"]))).map((g) => `<option>${esc(g)}</option>`).join("");
     return `${c.total ? `<div class="prog">
         <div class="bar" aria-hidden="true"><i class="c-ok" style="width:${w(c.ok)}"></i><i class="c-fail" style="width:${w(c.falha)}"></i><i class="c-na" style="width:${w(c.na)}"></i></div>
         <div class="legend"><span><i class="dot c-ok"></i>OK <b>${c.ok}</b></span><span><i class="dot c-fail"></i>Falha <b>${c.falha}</b></span><span><i class="dot c-na"></i>N.A. <b>${c.na}</b></span><span><i class="dot c-pend"></i>Pendente <b>${c.pendente}</b></span></div>
-      </div>` : `<div><button class="btn sm" data-action="ck-template">Usar checklist padrão</button></div>`}
+      </div>` : `<div><button class="btn sm" data-action="ck-template" data-mid="${mid}">Usar checklist padrão</button></div>`}
       <div>${ck}</div>
       <div class="add-row">
-        <input class="field-in" id="ck-new" placeholder="Novo item de teste…" aria-label="Novo item de teste">
+        <input class="field-in" id="ck-new" data-mid="${mid}" placeholder="Novo item de teste…" aria-label="Novo item de teste">
         <select class="field-in" id="ck-group" aria-label="Grupo">${groupOpts}</select>
-        <button class="btn" data-action="ck-add">Adicionar</button>
+        <button class="btn" data-action="ck-add" data-mid="${mid}">Adicionar</button>
       </div>`;
+  }
+
+  function machineEntries(p, mid) {
+    return (p.diario || []).map((e, i) => Object.assign({ _i: i }, e)).filter((e) => (e.maquinas || []).includes(mid))
+      .sort((a, b) => (a.data < b.data ? 1 : a.data > b.data ? -1 : b._i - a._i));
+  }
+  function tabMaquinas(p) {
+    const cfg = machCfg(p);
+    const ms = machinesOf(p);
+    const list = ms.map((m, i) => {
+      const open = state.openMachine === m.id;
+      const c = countList(m.checklist);
+      const sub = (p.tipo === "homologacao" ? [m.serie && "Série " + m.serie, m.produto, m.versaoSw && "SW " + m.versaoSw] : [m.serie && "Série " + m.serie, m.versaoHw && "HW " + m.versaoHw, m.local]).filter(Boolean).join(" · ");
+      const w = (n) => (c.total ? ((n / c.total) * 100).toFixed(1) : 0) + "%";
+      const nAct = machineEntries(p, m.id).length;
+      let body = "";
+      if (open) {
+        const fields = cfg.fields.map((f) => {
+          const v = m[f.k] == null ? "" : m[f.k];
+          const idf = "mf-" + m.id + "-" + f.k;
+          if (f.t === "area") return `<label class="wide" for="${idf}">${f.l}<textarea class="field-in" id="${idf}" data-mfield="${f.k}" data-mid="${esc(m.id)}">${esc(v)}</textarea></label>`;
+          return `<label for="${idf}">${f.l}<input class="field-in ${f.mono ? "mono" : ""}" id="${idf}" data-mfield="${f.k}" data-mid="${esc(m.id)}" value="${esc(v)}"></label>`;
+        }).join("");
+        const acts = machineEntries(p, m.id);
+        body = `<div class="mach-b">
+          <div class="mach-row">
+            <label for="ms-${esc(m.id)}">Situação<select class="field-in" id="ms-${esc(m.id)}" data-msit="1" data-mid="${esc(m.id)}">${cfg.sit.map((x) => `<option value="${x.v}" ${m.situacao === x.v ? "selected" : ""}>${x.l}</option>`).join("")}</select></label>
+            <button class="btn sm" data-action="reg-open" data-mid="${esc(m.id)}">+ Registrar atividade nesta ${cfg.um}</button>
+            <span class="spacer"></span>
+            <button class="btn sm ghost danger" data-action="m-del-ask" data-mid="${esc(m.id)}">Remover ${cfg.um}</button>
+          </div>
+          ${state.mDelAsk === m.id ? `<div class="confirm">Remover “${esc(machineLabel(p, m, i))}” e o checklist dela? As atividades continuam no histórico do cliente. <button class="btn sm danger" data-action="m-del-yes" data-mid="${esc(m.id)}">Sim, remover</button><button class="btn sm ghost" data-action="m-del-no">Cancelar</button></div>` : ""}
+          <div class="sec-sub">Dados</div>
+          <div class="grid">${fields}</div>
+          <div class="sec-sub">Checklist</div>
+          ${checklistHtml(p, m)}
+          <div class="sec-sub">Atividades nesta ${cfg.um}</div>
+          ${acts.length ? `<div class="log">${acts.map((e) => `<div class="entry"><span class="when">${esc(fmtDate(e.data))}</span><span class="what"><span class="tag ${esc(e.tipo || "nota")}">${esc(LOG_LABEL[e.tipo || "nota"] || "Nota")}</span>${esc(e.texto)}${attHtml(e.anexos)}</span><span></span></div>`).join("")}</div>` : `<p class="hint">Nenhuma atividade ligada a esta ${cfg.um}. Ao registrar uma atividade, marque em quais ${cfg.ums} você trabalhou.</p>`}
+        </div>`;
+      }
+      return `<div class="mach ${open ? "open" : ""}">
+        <button class="mach-h" data-action="m-toggle" data-mid="${esc(m.id)}" aria-expanded="${open}">
+          <span class="mach-n mono">${i + 1}</span>
+          <span class="mach-t"><b>${esc(machineLabel(p, m, i))}</b><span>${esc(sub || "Abrir para ver dados e checklist")}</span></span>
+          <span class="mach-s">
+            <span class="pill ${SIT_CLS[m.situacao] || "st-planejado"}">${esc(sitLabel(p, m.situacao))}</span>
+            ${c.total ? `<span class="mini" aria-hidden="true"><i class="c-ok" style="width:${w(c.ok)}"></i><i class="c-fail" style="width:${w(c.falha)}"></i><i class="c-na" style="width:${w(c.na)}"></i></span><span class="mono ${c.falha ? "late" : ""}">${c.falha ? c.falha + " falha" + (c.falha > 1 ? "s" : "") : c.ok + c.na + "/" + c.total}</span>` : ""}
+            ${nAct ? `<span class="mono">${nAct} ativ.</span>` : ""}
+          </span>
+          <span class="chev" aria-hidden="true">${open ? "▾" : "▸"}</span>
+        </button>${body}</div>`;
+    }).join("");
+    return `<div class="hist-head"><p class="hint">${p.tipo === "homologacao" ? "Cada máquina instalada neste cliente, com situação e checklist próprios." : "Cada unidade em teste, com situação e checklist próprios."}</p><button class="btn primary" data-action="m-add">${cfg.add}</button></div>
+      ${ms.length ? `<div class="machines">${list}</div>` : `<div class="box next-empty"><strong>Nenhuma ${cfg.um} cadastrada</strong><p class="hint">${p.tipo === "homologacao" ? "Adicione cada máquina que vai receber nossos produtos neste cliente." : "Adicione cada unidade que está sendo testada."}</p><div><button class="btn primary" data-action="m-add">${cfg.add}</button></div></div>`}`;
   }
 
   function tabDados(p) {
@@ -1397,13 +1528,18 @@ details.fold[open] > summary { margin-bottom: 10px; }
 
   function contactSide(p) {
     const rows = p.tipo === "homologacao"
-      ? [["Cliente", p.cliente], ["Fazenda", p.fazenda], ["Cidade", p.cidade], ["Contato", p.contato], ["Telefone", p.contatoTel, true], ["Máquina", [p.maqFabricante, p.maqModelo, p.maqAno].filter(Boolean).join(" ")]]
+      ? [["Cliente", p.cliente], ["Fazenda", p.fazenda], ["Cidade", p.cidade], ["Contato", p.contato], ["Telefone", p.contatoTel, true]]
       : [["Produto", p.produto], ["Versão", p.versaoSw, true], ["Hardware", p.versaoHw, true], ["Engenharia", p.engenharia], ["Release", p.release, true], ["Ambiente", p.ambiente]];
     const filled = rows.filter((r) => r[1]);
     return `<section class="side-box">
       <div class="side-h">${p.tipo === "homologacao" ? "Cliente" : "Versão em teste"}</div>
       ${filled.length ? `<dl class="kv">${filled.map((r) => `<dt>${r[0]}</dt><dd class="${r[2] ? "mono" : ""}">${esc(r[1])}</dd>`).join("")}</dl>` : `<p class="hint">Sem dados ainda.</p>`}
       <button class="link" data-action="tab" data-v="dados">Editar dados</button>
+    </section>
+    <section class="side-box">
+      <div class="side-h">${esc(machCfg(p).nome)}</div>
+      ${machinesOf(p).length ? `<ul class="side-m">${machinesOf(p).map((m, i) => `<li><button class="link-row" data-action="m-goto" data-mid="${esc(m.id)}"><span>${esc(machineLabel(p, m, i))}</span><span class="pill ${SIT_CLS[m.situacao] || "st-planejado"}">${esc(sitLabel(p, m.situacao))}</span></button></li>`).join("")}</ul>` : `<p class="hint">Nenhuma ${machCfg(p).um} cadastrada.</p>`}
+      <button class="link" data-action="m-add">${machCfg(p).add}</button>
     </section>`;
   }
 
@@ -1428,10 +1564,11 @@ details.fold[open] > summary { margin-bottom: 10px; }
     const tabs = [
       { k: "proximo", l: "Próximo passo", cnt: nTxt, cls: nCls },
       { k: "historico", l: "Histórico", cnt: String(nDiario), cls: "" },
-      { k: "checklist", l: "Checklist", cnt: c.total ? (c.falha ? `${c.falha} falha${c.falha > 1 ? "s" : ""}` : pct + "%") : "", cls: c.falha ? "late" : "" },
+      { k: "maquinas", l: machCfg(p).nome, cnt: machinesOf(p).length ? (c.falha ? `${machinesOf(p).length} · ${c.falha} falha${c.falha > 1 ? "s" : ""}` : String(machinesOf(p).length)) : "", cls: c.falha ? "late" : "" },
       { k: "dados", l: "Dados", cnt: "", cls: "" },
     ];
-    const tabBody = state.tab === "historico" ? tabHistorico(p) : state.tab === "checklist" ? tabChecklist(p) : state.tab === "dados" ? tabDados(p) : tabProximo(p);
+    if (state.tab === "checklist") state.tab = "maquinas";
+    const tabBody = state.tab === "historico" ? tabHistorico(p) : state.tab === "maquinas" ? tabMaquinas(p) : state.tab === "dados" ? tabDados(p) : tabProximo(p);
 
     const coverBlock = `<div class="d-cover ${p.capa ? "" : "none"}">${p.capa ? coverImg(p.capa) : ""}
         <div class="cv-actions">
@@ -1492,11 +1629,11 @@ details.fold[open] > summary { margin-bottom: 10px; }
     { v: "teste", l: "Teste", d: "Bancada ou campo", ph: "O que foi testado, resultado, versão usada…" },
     { v: "nota", l: "Anotação", d: "Observação geral", ph: "Anotação…" },
   ];
-  function openRegister(conclude) {
+  function openRegister(conclude, mid) {
     const p = state.projects.get(state.selectedId); if (!p) return;
     const nt = nextOf(p);
     clearAtt();
-    state.reg = { conclude: !!(conclude && nt), tipo: conclude && nt ? (NEXT_TO_LOG[nt.tipo] || "nota") : "visita", data: todayISO(), texto: "" };
+    state.reg = { conclude: !!(conclude && nt), tipo: conclude && nt ? (NEXT_TO_LOG[nt.tipo] || "nota") : "visita", data: todayISO(), texto: "", maquinas: mid ? [mid] : [] };
     renderRegister();
     setTimeout(() => { const t = $("#reg-text"); if (t) t.focus(); }, 0);
   }
@@ -1529,9 +1666,11 @@ details.fold[open] > summary { margin-bottom: 10px; }
         <div class="q"><span class="qn">3</span>Como foi?</div>
         <textarea class="field-in" id="reg-text" rows="4" placeholder="${esc(tp.ph)}" aria-label="Como foi">${esc(r.texto)}</textarea>
         ${nt ? `<label class="conclude"><input type="checkbox" id="reg-conclude" ${r.conclude ? "checked" : ""}><span>Isso conclui o próximo passo: <b>${esc(nt.texto)}</b> <span class="mono">(${esc(fmtDate(nt.prazo))})</span></span></label>` : ""}
-        <div class="q"><span class="qn">4</span>E o próximo passo?</div>
+        ${machinesOf(p).length ? `<div class="q"><span class="qn">4</span>Em quais ${machCfg(p).ums}? <span class="opt">(opcional)</span></div>
+        <div class="quick">${machinesOf(p).map((m, i) => `<button type="button" class="chip" data-action="reg-mach" data-mid="${esc(m.id)}" aria-pressed="${(r.maquinas || []).includes(m.id)}">${esc(machineLabel(p, m, i))}</button>`).join("")}</div>` : ""}
+        <div class="q"><span class="qn">${machinesOf(p).length ? 5 : 4}</span>E o próximo passo?</div>
         ${schedForm("rg", p, { allowNone: true, tipo: "contato", keep: nt && !r.conclude ? nt : null })}
-        ${attSection(5)}
+        ${attSection(machinesOf(p).length ? 6 : 5)}
         <div class="modal-f"><button class="btn ghost" data-action="reg-close">Cancelar</button><button class="btn primary" data-action="reg-save" id="reg-save-btn">Salvar</button></div>
       </div></div>`;
     m.hidden = false;
@@ -1555,6 +1694,7 @@ details.fold[open] > summary { margin-bottom: 10px; }
     }
     const entry = { id: rid(), data: r.data || todayISO(), tipo: r.tipo, texto: conclude ? nt.texto + (texto ? "\n" + texto : "") : texto, autor: state.myId || "" };
     if (conclude) { entry.prazoOriginal = nt.prazo; anexos = (nt.anexos || []).concat(anexos); }
+    if ((r.maquinas || []).length) entry.maquinas = r.maquinas.slice();
     if (anexos.length) entry.anexos = anexos;
     p.diario = (p.diario || []).concat([entry]);
     const fields = ["diario"];
@@ -1643,12 +1783,17 @@ details.fold[open] > summary { margin-bottom: 10px; }
     (FIELDS[p.tipo] || []).forEach((f) => { if (p[f.k]) L.push(`${f.l}: ${f.t === "date" ? fmtDate(p[f.k]) : p[f.k]}`); });
     const nt = nextOf(p);
     if (nt) L.push("", `PRÓXIMO PASSO: ${nt.texto} (${fmtDate(nt.prazo)})`);
-    if (c.total) {
-      L.push("", `Checklist: ${c.ok} OK, ${c.falha} falha, ${c.na} N.A., ${c.pendente} pendente (de ${c.total})`);
-      const fails = (p.checklist || []).filter((i) => i.status === "falha");
-      if (fails.length) { L.push("", "FALHAS:"); fails.forEach((i) => L.push(`- [${i.grupo}] ${i.texto}${i.nota ? " — " + i.nota : ""}`)); }
-      const notes = (p.checklist || []).filter((i) => i.status !== "falha" && i.nota);
-      if (notes.length) { L.push("", "OBSERVAÇÕES:"); notes.forEach((i) => L.push(`- ${i.texto}: ${i.nota}`)); }
+    const ms = machinesOf(p);
+    if (ms.length) {
+      L.push("", `${machCfg(p).nome.toUpperCase()} (${ms.length}):`);
+      ms.forEach((m, i) => {
+        const mc = countList(m.checklist);
+        const det = machCfg(p).fields.filter((f) => f.t !== "area" && m[f.k]).map((f) => `${f.l}: ${m[f.k]}`).join(" | ");
+        L.push(`${i + 1}. ${machineLabel(p, m, i)} — ${sitLabel(p, m.situacao)}${det ? "\n   " + det : ""}`);
+        if (mc.total) L.push(`   Checklist: ${mc.ok} OK, ${mc.falha} falha, ${mc.na} N.A., ${mc.pendente} pendente (de ${mc.total})`);
+        (m.checklist || []).filter((it) => it.status === "falha").forEach((it) => L.push(`   FALHA: [${it.grupo}] ${it.texto}${it.nota ? " — " + it.nota : ""}`));
+        (m.checklist || []).filter((it) => it.status !== "falha" && it.nota).forEach((it) => L.push(`   Obs.: ${it.texto}: ${it.nota}`));
+      });
     }
     const d = (p.diario || []).slice().sort((a, b) => (a.data < b.data ? -1 : 1));
     if (d.length) { L.push("", "HISTÓRICO:"); d.forEach((e) => L.push(`${fmtDate(e.data)} — [${LOG_LABEL[e.tipo || "nota"] || "Nota"}] ${e.texto}`)); }
@@ -1672,6 +1817,7 @@ details.fold[open] > summary { margin-bottom: 10px; }
   const WRITE_ACTIONS = new Set(["new", "nf-create", "del-ask", "del-yes", "ck-set", "ck-del", "ck-template", "ck-add", "log-del", "reg-open", "reg-save", "next-open", "stage", "sp-advance", "sp-back", "stage-done", "stage-pend", "next-save", "next-drop"]);
 
   function selectProject(pid, tab) {
+    state.openMachine = null; state.mDelAsk = null;
     if (state.reg || state.nextModal) closeRegister();
     state.selectedId = pid; state.view = "projetos"; state.confirmDelete = false; state.stagePanel = null;
     state.openNotes.clear(); state.tab = tab || "proximo";
@@ -1738,7 +1884,13 @@ details.fold[open] > summary { margin-bottom: 10px; }
       if (it) { if (it.url) URL.revokeObjectURL(it.url); if (it.meta) state.attRemoved.push(it.meta); }
       state.att = state.att.filter((x) => x.key !== k); renderAttList(); return;
     }
-    if (a === "reg-open") { openRegister(b.dataset.conclude === "1"); return; }
+    if (a === "reg-open") { openRegister(b.dataset.conclude === "1", b.dataset.mid); return; }
+    if (a === "reg-mach") {
+      const mid = b.dataset.mid; const on = b.getAttribute("aria-pressed") !== "true";
+      b.setAttribute("aria-pressed", String(on));
+      state.reg.maquinas = (state.reg.maquinas || []).filter((x) => x !== mid).concat(on ? [mid] : []);
+      return;
+    }
     if (a === "reg-close") { closeRegister(); return; }
     if (a === "reg-bg") { if (ev.target === b) closeRegister(); return; }
     if (a === "reg-tipo") { captureRegister(); state.reg.tipo = b.dataset.v; b.parentElement.querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", String(x === b))); const tp = REG_TIPOS.find((x) => x.v === b.dataset.v); const t = $("#reg-text"); if (t && tp) t.placeholder = tp.ph; return; }
@@ -1755,7 +1907,7 @@ details.fold[open] > summary { margin-bottom: 10px; }
       state.projects.set(nid, {
         tipo: state.newTipo, titulo, status: "planejado", prioridade: "media", etapa: first,
         etapasHist: [{ etapa: first, data: todayISO(), autor: state.myId || "" }],
-        checklist: makeChecklist(state.newTipo),
+        checklist: [], maquinas: [],
         diario: [{ id: rid(), data: todayISO(), tipo: "etapa", texto: "Projeto criado", autor: state.myId || "", auto: true }],
         proximo: null, created: Date.now(), updated: Date.now(), createdBy: state.myId || "",
       });
@@ -1822,11 +1974,16 @@ details.fold[open] > summary { margin-bottom: 10px; }
     if (a === "next-open") { openNext(b.dataset.edit === "1"); return; }
     if (a === "next-save") { saveNext(id, p); return; }
     if (a === "next-drop") { const old = nextOf(p); p.proximo = null; changed(id, ["proximo"], { detail: true, now: true }); if (old) removeFiles(old.anexos); return; }
-    if (a === "ck-set") {
-      const it = p.checklist.find((x) => x.id === b.dataset.item); if (!it) return;
-      it.status = it.status === b.dataset.v ? "pendente" : b.dataset.v;
-      changed(id, ["checklist"], { detail: true });
-      if (it.status === "falha" && !it.nota) setTimeout(() => { const n = document.getElementById("nt-" + it.id); n && n.focus(); }, 0);
+    if (a === "ck-set" || a === "ck-del" || a === "ck-template" || a === "ck-add") {
+      const m = getMachine(p, b.dataset.mid); if (!m) return;
+      if (a === "ck-set") {
+        const it = (m.checklist || []).find((x) => x.id === b.dataset.item); if (!it) return;
+        it.status = it.status === b.dataset.v ? "pendente" : b.dataset.v;
+        changed(id, ["maquinas"], { detail: true });
+        if (it.status === "falha" && !it.nota) setTimeout(() => { const n = document.getElementById("nt-" + it.id); n && n.focus(); }, 0);
+      } else if (a === "ck-del") { m.checklist = (m.checklist || []).filter((x) => x.id !== b.dataset.item); changed(id, ["maquinas"], { detail: true }); }
+      else if (a === "ck-template") { m.checklist = makeChecklist(p.tipo); changed(id, ["maquinas"], { detail: true }); }
+      else addItem(p, id, m);
       return;
     }
     if (a === "ck-note") {
@@ -1836,9 +1993,27 @@ details.fold[open] > summary { margin-bottom: 10px; }
       const n = document.getElementById("nt-" + iid); n && n.focus();
       return;
     }
-    if (a === "ck-del") { p.checklist = p.checklist.filter((x) => x.id !== b.dataset.item); changed(id, ["checklist"], { detail: true }); return; }
-    if (a === "ck-template") { p.checklist = makeChecklist(p.tipo); changed(id, ["checklist"], { detail: true }); return; }
-    if (a === "ck-add") { addItem(p, id); return; }
+    if (a === "m-toggle") { state.openMachine = state.openMachine === b.dataset.mid ? null : b.dataset.mid; state.mDelAsk = null; renderDetail(); return; }
+    if (a === "m-goto") { state.tab = "maquinas"; state.openMachine = b.dataset.mid; renderDetail(); const el = document.querySelector(".mach.open"); if (el) el.scrollIntoView({ block: "start", behavior: "smooth" }); return; }
+    if (a === "m-add") {
+      const ms = ensureMachines(p);
+      const m = { id: rid(), situacao: "aguardando", checklist: makeChecklist(p.tipo), criado: todayISO() };
+      if (p.tipo === "validacao") m.nome = `Unidade ${ms.length + 1}`;
+      ms.push(m);
+      state.tab = "maquinas"; state.openMachine = m.id;
+      changed(id, ["maquinas"], { detail: true, now: true });
+      setTimeout(() => { const f = document.querySelector(`[data-mfield][data-mid="${m.id}"]`); if (f) { f.focus(); f.scrollIntoView({ block: "center" }); } }, 0);
+      return;
+    }
+    if (a === "m-del-ask") { state.mDelAsk = b.dataset.mid; renderDetail(); return; }
+    if (a === "m-del-no") { state.mDelAsk = null; renderDetail(); return; }
+    if (a === "m-del-yes") {
+      p.maquinas = ensureMachines(p).filter((m) => m.id !== b.dataset.mid);
+      state.mDelAsk = null; state.openMachine = null;
+      changed(id, ["maquinas"], { detail: true, now: true });
+      toast("Removida.");
+      return;
+    }
     if (a === "log-del") {
       const gone = (p.diario || []).find((e) => e.id === b.dataset.entry);
       p.diario = (p.diario || []).filter((e) => e.id !== b.dataset.entry);
@@ -1849,11 +2024,11 @@ details.fold[open] > summary { margin-bottom: 10px; }
     }
   });
 
-  function addItem(p, id) {
+  function addItem(p, id, m) {
     const txt = $("#ck-new").value.trim(); if (!txt) { $("#ck-new").focus(); return; }
     const grupo = $("#ck-group").value || "Geral";
-    p.checklist = (p.checklist || []).concat([{ id: rid(), grupo, texto: txt, status: "pendente", nota: "" }]);
-    changed(id, ["checklist"], { detail: true });
+    m.checklist = (m.checklist || []).concat([{ id: rid(), grupo, texto: txt, status: "pendente", nota: "" }]);
+    changed(id, ["maquinas"], { detail: true });
     const g = $("#ck-group"); if (g) g.value = grupo;
     const n = $("#ck-new"); if (n) n.focus();
   }
@@ -1878,8 +2053,14 @@ details.fold[open] > summary { margin-bottom: 10px; }
       return;
     }
     if (t.dataset.note) {
-      const it = p.checklist.find((x) => x.id === t.dataset.note); if (!it) return;
-      it.nota = t.value; changed(id, ["checklist"]);
+      const m = getMachine(p, t.dataset.mid); if (!m) return;
+      const it = (m.checklist || []).find((x) => x.id === t.dataset.note); if (!it) return;
+      it.nota = t.value; changed(id, ["maquinas"]);
+      return;
+    }
+    if (t.dataset.mfield) {
+      const m = getMachine(p, t.dataset.mid); if (!m) return;
+      m[t.dataset.mfield] = t.value; changed(id, ["maquinas"]);
     }
   });
   async function handleCoverFile(id, file) {
@@ -1905,6 +2086,14 @@ details.fold[open] > summary { margin-bottom: 10px; }
     if (t.id === "f-status") { state.filter.status = t.value; renderList(); return; }
     const id = state.selectedId; const p = id && state.projects.get(id);
     if (!p) return;
+    if (t.dataset.msit) {
+      const m = getMachine(p, t.dataset.mid); if (!m) return;
+      m.situacao = t.value;
+      const i = ensureMachines(p).indexOf(m);
+      p.diario = (p.diario || []).concat([{ id: rid(), data: todayISO(), tipo: "maquina", texto: `${machineLabel(p, m, i)}: ${sitLabel(p, t.value)}`, autor: state.myId || "", auto: true, maquinas: [m.id] }]);
+      changed(id, ["maquinas", "diario"], { detail: true, now: true });
+      return;
+    }
     if (t.tagName === "SELECT" && t.dataset.field) { p[t.dataset.field] = t.value; changed(id, [t.dataset.field], { now: true, detail: !!t.dataset.rerender }); return; }
     if (t.id === "next-date" && p.proximo && t.value) {
       p.proximo = Object.assign({}, p.proximo, { prazo: t.value });
@@ -1917,7 +2106,7 @@ details.fold[open] > summary { margin-bottom: 10px; }
     if (ev.key !== "Enter") return;
     const t = ev.target;
     const id = state.selectedId; const p = id && state.projects.get(id);
-    if (t.id === "ck-new") { ev.preventDefault(); if (p) addItem(p, id); }
+    if (t.id === "ck-new") { ev.preventDefault(); const m = p && getMachine(p, t.dataset.mid); if (m) addItem(p, id, m); }
     if (t.id === "np-texto") { ev.preventDefault(); const bt = document.querySelector('[data-action="next-save"]'); bt && bt.click(); }
     if (t.id === "nf-titulo") { ev.preventDefault(); document.querySelector('[data-action="nf-create"]').click(); }
   });
