@@ -1060,6 +1060,49 @@ details.fold[open] > summary { margin-bottom: 10px; }
     if (state.view === "agenda" && !$("#agenda").contains(document.activeElement)) renderAgenda();
   }
 
+  /* ---------- Automation: activities move the journey and machine status forward ---------- */
+  // activity type -> journey stage it implies (only ever moves forward)
+  const AUTO_STAGE = {
+    homologacao: { instalacao: "instalacao", teste: "testes", treinamento: "entrega" },
+    validacao: { teste: "bancada" },
+  };
+  // activity type -> machine status change, for the machines marked in the activity
+  const AUTO_MACH = {
+    instalacao: { from: ["aguardando"], to: "instalada" },
+    treinamento: { from: ["aguardando", "instalada", "homologada"], to: "entregue" },
+  };
+  function advanceTo(p, k) {
+    const st = stages(p); const ti = st.findIndex((x) => x.k === k);
+    if (ti < 0 || ti <= stageIdx(p)) return null;
+    p.etapa = k;
+    p.etapasHist = (p.etapasHist || []).concat([{ etapa: k, data: todayISO(), autor: state.myId || "", auto: true }]);
+    p.etapasPend = (p.etapasPend || []).filter((x) => x !== k);
+    p.diario = (p.diario || []).concat([{ id: rid(), data: todayISO(), tipo: "etapa", texto: "Etapa: " + st[ti].l, autor: state.myId || "", auto: true }]);
+    return st[ti].l;
+  }
+  // act: { tipo: activity type or null, maquinas: [ids], next: new next step or null }
+  function applyAutomation(p, act) {
+    const msgs = []; const fields = new Set();
+    // freeze machine statuses before the journey moves (older projects derive them from the stage)
+    if ((act.maquinas || []).length) ensureMachines(p);
+    const target = act.tipo && (AUTO_STAGE[p.tipo] || {})[act.tipo];
+    let lbl = target ? advanceTo(p, target) : null;
+    if (!lbl && p.tipo === "homologacao" && (act.tipo === "visita" || act.tipo === "suporte") && stageKey(p) === "entrega") lbl = advanceTo(p, "acomp_campo");
+    if (!lbl && p.tipo === "homologacao" && act.next && act.next.tipo === "visita" && stageKey(p) === "contato") lbl = advanceTo(p, "agendado");
+    if (lbl) { msgs.push(`jornada em “${lbl}”`); ["etapa", "etapasHist", "etapasPend", "diario"].forEach((f) => fields.add(f)); }
+    const rule = p.tipo === "homologacao" && act.tipo ? AUTO_MACH[act.tipo] : null;
+    if (rule && (act.maquinas || []).length) {
+      ensureMachines(p).forEach((m, i) => {
+        if (!act.maquinas.includes(m.id) || !rule.from.includes(m.situacao || "aguardando")) return;
+        m.situacao = rule.to;
+        p.diario = (p.diario || []).concat([{ id: rid(), data: todayISO(), tipo: "maquina", texto: `${machineLabel(p, m, i)}: ${sitLabel(p, rule.to)}`, autor: state.myId || "", auto: true, maquinas: [m.id] }]);
+        msgs.push(`${machineLabel(p, m, i)} ${sitLabel(p, rule.to).toLowerCase()}`);
+        fields.add("maquinas"); fields.add("diario");
+      });
+    }
+    return { msgs, fields: Array.from(fields) };
+  }
+
   /* ---------- Domain actions ---------- */
   // marks: { stageKey: "ok" | "pend" } for the stages passed over when moving ahead
   // Going back to the stage right before the last change undoes that change (no extra history line)
@@ -1323,11 +1366,13 @@ details.fold[open] > summary { margin-bottom: 10px; }
     const removed = state.attRemoved.slice();
     const replaced = !ed && nextOf(p) ? (nextOf(p).anexos || []) : [];
     p.proximo = n;
+    const auto = applyAutomation(p, { tipo: null, maquinas: [], next: n });
     closeRegister();
     state.tab = "proximo";
-    changed(id, ["proximo"], { detail: true, now: true });
+    changed(id, ["proximo"].concat(auto.fields), { detail: true, now: true });
     removeFiles(removed.concat(replaced));
-    toast(ed ? "Próximo passo atualizado." : `Próximo passo agendado para ${fmtDate(n.prazo)}.`);
+    const base = ed ? "Próximo passo atualizado." : `Próximo passo agendado para ${fmtDate(n.prazo)}.`;
+    toast(auto.msgs.length ? `${base} Atualizado: ${auto.msgs.join(", ")}.` : base);
   }
   function openNext(edit) {
     const p = state.projects.get(state.selectedId); if (!p) return;
@@ -1698,9 +1743,12 @@ details.fold[open] > summary { margin-bottom: 10px; }
     p.diario = (p.diario || []).concat([entry]);
     const fields = ["diario"];
     if (n !== "keep") { p.proximo = n || null; fields.push("proximo"); }
+    const auto = applyAutomation(p, { tipo: r.tipo, maquinas: entry.maquinas || [], next: n && n !== "keep" ? n : null });
+    auto.fields.forEach((f) => { if (!fields.includes(f)) fields.push(f); });
     closeRegister();
     changed(id, fields, { detail: true, now: true });
-    toast(n && n !== "keep" ? `Registrado. Próximo passo em ${fmtDate(n.prazo)}.` : "Registrado no histórico.");
+    const base = n && n !== "keep" ? `Registrado. Próximo passo em ${fmtDate(n.prazo)}.` : "Registrado no histórico.";
+    toast(auto.msgs.length ? `${base} Atualizado: ${auto.msgs.join(", ")}.` : base);
   }
 
   function attError(e) {
@@ -1803,7 +1851,7 @@ details.fold[open] > summary { margin-bottom: 10px; }
   function toast(msg) {
     const me = $("#modal-err"); if (me && !$("#modal").hidden) me.textContent = msg;
     const t = $("#toast"); t.textContent = msg; t.hidden = false;
-    clearTimeout(toastT); toastT = setTimeout(() => { t.hidden = true; }, 2600);
+    clearTimeout(toastT); toastT = setTimeout(() => { t.hidden = true; }, msg.length > 60 ? 5000 : 2600);
   }
   function fallbackCopy(txt) {
     const ta = document.createElement("textarea");
