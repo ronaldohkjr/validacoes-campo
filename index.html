@@ -1968,7 +1968,7 @@ details.fold[open] > summary { margin-bottom: 10px; }
       return;
     }
     if (a === "reg-close") { closeRegister(); return; }
-    if (a === "reg-bg") { if (ev.target === b) closeRegister(); return; }
+    if (a === "reg-bg") { if (ev.target === b) { const t = $("#reg-text") || $("#np-texto"); if (t) t.focus(); } return; }
     if (a === "reg-tipo") { captureRegister(); state.reg.tipo = b.dataset.v; b.parentElement.querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", String(x === b))); const tp = REG_TIPOS.find((x) => x.v === b.dataset.v); const t = $("#reg-text"); if (t && tp) t.placeholder = tp.ph; return; }
     if (a === "reg-day") { $("#reg-date").value = b.dataset.v; b.parentElement.querySelectorAll(".chip").forEach((x) => x.setAttribute("aria-pressed", String(x === b))); return; }
     if (a === "reg-save") { saveRegister(); return; }
@@ -2178,7 +2178,11 @@ details.fold[open] > summary { margin-bottom: 10px; }
     }
   });
   document.addEventListener("keydown", (ev) => {
-    if (ev.key === "Escape" && (state.reg || state.nextModal)) { closeRegister(); return; }
+    if (ev.key === "Escape" && (state.reg || state.nextModal)) {
+      const typed = ($("#reg-text") && $("#reg-text").value.trim()) || (state.att || []).some((a) => a.file);
+      if (typed) toast("Use Cancelar para descartar ou Salvar para guardar."); else closeRegister();
+      return;
+    }
     if (ev.key !== "Enter") return;
     const t = ev.target;
     const id = state.selectedId; const p = id && state.projects.get(id);
