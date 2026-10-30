@@ -371,7 +371,7 @@ details.fold[open] > summary { margin-bottom: 10px; }
 .arow .at { min-width: 0; overflow-wrap: anywhere; }
 .arow .sub { font-size: 12.5px; color: var(--muted); }
 
-.toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(18px + env(safe-area-inset-bottom, 0px)); background: var(--ink); color: var(--bg); padding: 8px 14px; border-radius: 6px; font-size: 13px; z-index: 20; max-width: calc(100% - 32px); }
+.toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(18px + env(safe-area-inset-bottom, 0px)); background: var(--ink); color: var(--bg); padding: 8px 14px; border-radius: 6px; font-size: 13px; z-index: 50; max-width: calc(100% - 32px); }
 .saving { font-size: 12px; color: var(--muted); }
 
 /* Project page: side column (journey, client) + main column (tabs) */
@@ -484,6 +484,7 @@ details.fold[open] > summary { margin-bottom: 10px; }
 .conclude input { width: 18px; height: 18px; accent-color: var(--accent); margin: 1px 0 0; flex: none; }
 .modal-f { display: flex; justify-content: flex-end; gap: 8px; margin-top: 8px; border-top: 1px solid var(--line); padding-top: 12px; }
 .modal-f .btn { padding: 9px 16px; }
+.modal-err { flex: 1; align-self: center; color: var(--fail); font-size: 13px; }
 
 /* Login (own site) */
 .auth { min-height: 100%; display: flex; align-items: center; justify-content: center; padding-block: 32px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
@@ -1358,7 +1359,7 @@ details.fold[open] > summary { margin-bottom: 10px; }
           </div>
         </div>
         ${attSection(3)}
-        <div class="modal-f"><button class="btn ghost" data-action="reg-close">Cancelar</button><button class="btn primary" data-action="next-save" id="np-save-btn">${ed ? "Salvar" : "Agendar"}</button></div>
+        <div class="modal-f"><span class="modal-err" id="modal-err" role="alert"></span><button class="btn ghost" data-action="reg-close">Cancelar</button><button class="btn primary" data-action="next-save" id="np-save-btn">${ed ? "Salvar" : "Agendar"}</button></div>
       </div></div>`;
     m.hidden = false;
     setTimeout(() => { const t = $("#np-texto"); if (t) { t.focus(); t.select(); } }, 0);
@@ -1669,7 +1670,7 @@ details.fold[open] > summary { margin-bottom: 10px; }
         <div class="q"><span class="qn">${machinesOf(p).length ? 5 : 4}</span>E o próximo passo?</div>
         ${schedForm("rg", p, { allowNone: true, tipo: "contato", keep: nt && !r.conclude ? nt : null })}
         ${attSection(machinesOf(p).length ? 6 : 5)}
-        <div class="modal-f"><button class="btn ghost" data-action="reg-close">Cancelar</button><button class="btn primary" data-action="reg-save" id="reg-save-btn">Salvar</button></div>
+        <div class="modal-f"><span class="modal-err" id="modal-err" role="alert"></span><button class="btn ghost" data-action="reg-close">Cancelar</button><button class="btn primary" data-action="reg-save" id="reg-save-btn">Salvar</button></div>
       </div></div>`;
     m.hidden = false;
   }
@@ -1705,7 +1706,7 @@ details.fold[open] > summary { margin-bottom: 10px; }
   function attError(e) {
     if (e && e.code === "no_bucket") return "Falta configurar o armazenamento de anexos no Supabase (supabase/003_anexos.sql).";
     if (e && e.code === "not_supported") return "Neste modo só é possível anexar fotos.";
-    return "Não foi possível enviar os anexos. Verifique a conexão e tente de novo.";
+    return "Não foi possível enviar os anexos. Verifique a conexão e tente de novo." + (e && e.message ? ` (${e.message})` : "");
   }
 
   function renderAgenda() {
@@ -1800,6 +1801,7 @@ details.fold[open] > summary { margin-bottom: 10px; }
 
   let toastT = null;
   function toast(msg) {
+    const me = $("#modal-err"); if (me && !$("#modal").hidden) me.textContent = msg;
     const t = $("#toast"); t.textContent = msg; t.hidden = false;
     clearTimeout(toastT); toastT = setTimeout(() => { t.hidden = true; }, 2600);
   }
@@ -2164,7 +2166,7 @@ details.fold[open] > summary { margin-bottom: 10px; }
         const name = img ? safeName(file.name).replace(/\.[^.]+$/, "") + ".jpg" : safeName(file.name);
         const path = id + "/" + Date.now() + "-" + rid().slice(0, 6) + "-" + name;
         const { error } = await sb.storage.from("anexos").upload(path, blob, { contentType: img ? "image/jpeg" : (file.type || "application/octet-stream"), upsert: false });
-        if (error) throw { code: /bucket/i.test(error.message || "") ? "no_bucket" : "upload", message: error.message };
+        if (error) throw { code: /bucket|row-level security|policy|unauthorized/i.test(error.message || "") ? "no_bucket" : "upload", message: error.message };
         return { ref: "sa:" + path, nome: file.name || name, tipo: img ? "image/jpeg" : (file.type || ""), tamanho: blob.size, img: isImgType(file.type) };
       },
       async removeFiles(refs) { const paths = refs.filter((r) => r.startsWith("sa:")).map((r) => r.slice(3)); if (paths.length) await sb.storage.from("anexos").remove(paths); },
