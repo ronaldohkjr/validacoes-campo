@@ -293,6 +293,9 @@ fieldset.d-head2 { display: flex; flex-direction: column; gap: 8px; }
 .tag { display: inline-block; font-size: 10.5px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; padding: 1px 6px; border-radius: 4px; margin-right: 6px; vertical-align: 1px; }
 .tag.contato, .tag.ligacao { background: var(--info-soft); color: var(--info); }
 .tag.visita { background: var(--accent-soft); color: var(--accent); }
+.tag.instalacao { background: var(--accent); color: var(--accent-ink); }
+.tag.suporte { background: var(--fail-soft); color: var(--fail); }
+.tag.treinamento { background: var(--ok-soft); color: var(--ok); border: 1px solid var(--ok); }
 .tag.mensagem { background: var(--na-soft); color: var(--na); }
 .tag.teste, .tag.tarefa { background: var(--pend-soft); color: var(--pend); }
 .tag.nota { background: var(--na-soft); color: var(--muted); }
@@ -480,7 +483,7 @@ details.fold[open] > summary { margin-bottom: 10px; }
 .modal-h h2 { font-family: var(--f-display); font-weight: 600; font-size: 24px; margin: 0; line-height: 1.1; }
 .modal .q { display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 14px; margin-top: 8px; }
 .qn { display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: var(--accent); color: var(--accent-ink); font-size: 12px; font-family: var(--f-mono); flex: none; }
-.type-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; }
+.type-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
 .type-grid button { border: 1px solid var(--line); background: var(--raised); border-radius: 8px; padding: 10px 8px; display: flex; flex-direction: column; gap: 2px; text-align: left; min-width: 0; }
 .type-grid button b { font-size: 14px; }
 .type-grid button span { font-size: 11.5px; color: var(--muted); line-height: 1.25; }
@@ -523,7 +526,6 @@ details.fold[open] > summary { margin-bottom: 10px; }
   .mach-h { grid-template-columns: 26px minmax(0, 1fr) 16px; }
   .mach-s { grid-column: 2 / 3; justify-content: flex-start; }
   .mach-row select { min-width: 0; }
-  .type-grid button:last-child { grid-column: 1 / -1; }
   .modal { padding: 14px; }
   .ck { grid-template-columns: minmax(0, 1fr) auto; }
   .ck .tri { grid-column: 1 / 2; justify-self: start; }
@@ -643,12 +645,15 @@ details.fold[open] > summary { margin-bottom: 10px; }
 
   const LOG_TIPOS = [
     { v: "visita", l: "Visita" },
+    { v: "instalacao", l: "Instalação" },
+    { v: "suporte", l: "Suporte" },
+    { v: "treinamento", l: "Treinamento" },
     { v: "ligacao", l: "Ligação" },
     { v: "mensagem", l: "Mensagem / e-mail" },
     { v: "teste", l: "Teste" },
     { v: "nota", l: "Anotação" },
   ];
-  const LOG_LABEL = { visita: "Visita", ligacao: "Ligação", mensagem: "Mensagem", teste: "Teste", nota: "Nota", etapa: "Etapa", feito: "Feito", maquina: "Máquina" };
+  const LOG_LABEL = { visita: "Visita", instalacao: "Instalação", suporte: "Suporte", treinamento: "Treinamento", ligacao: "Ligação", mensagem: "Mensagem", teste: "Teste", nota: "Nota", etapa: "Etapa", feito: "Feito", maquina: "Máquina" };
 
   const FIELDS = {
     homologacao: [
@@ -1623,7 +1628,10 @@ details.fold[open] > summary { margin-bottom: 10px; }
 
   /* ---------- Register activity (one form for visits, calls, messages, tests, notes) ---------- */
   const REG_TIPOS = [
-    { v: "visita", l: "Visita", d: "Esteve no cliente ou em campo", ph: "O que foi feito na visita? Ex.: instalado o kit, calibrado o piloto, treinado o operador, problemas encontrados…" },
+    { v: "visita", l: "Visita", d: "Esteve no cliente ou em campo", ph: "O que foi feito na visita? Ex.: levantamento, vistoria, acompanhamento, problemas encontrados…" },
+    { v: "instalacao", l: "Instalação", d: "Instalou equipamento na máquina", ph: "O que foi instalado, em qual máquina, materiais usados, calibrações, pendências…" },
+    { v: "suporte", l: "Suporte", d: "Resolveu problema ou dúvida", ph: "Qual era o problema, a causa, o que foi feito e se ficou resolvido…" },
+    { v: "treinamento", l: "Treinamento", d: "Treinou operador ou equipe", ph: "Quem foi treinado, quais funções, dúvidas do operador, se ficou seguro para operar…" },
     { v: "ligacao", l: "Ligação", d: "Falou por telefone", ph: "O que foi conversado? Como está o equipamento? O cliente pediu algo?" },
     { v: "mensagem", l: "Mensagem", d: "WhatsApp ou e-mail", ph: "Resumo da conversa por WhatsApp ou e-mail…" },
     { v: "teste", l: "Teste", d: "Bancada ou campo", ph: "O que foi testado, resultado, versão usada…" },
