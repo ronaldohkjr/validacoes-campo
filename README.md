@@ -20,10 +20,11 @@ Para configurar o site e cadastrar pessoas, veja [docs/CONFIGURAR.md](docs/CONFI
 - **Cliente no centro, com várias máquinas**: cada projeto é um cliente; a aba **Máquinas** guarda cada máquina instalada, com dados, situação (aguardando instalação → instalada → homologada → entregue) e checklist próprios. Atividades podem ser ligadas às máquinas. Em validação, são **Unidades de teste**.
 - **Automático**: registrar uma atividade avança a jornada e a situação das máquinas:
   - Agendar próximo passo do tipo Visita (no Primeiro contato) → *Visita agendada*
-  - Instalação → *Instalação* (máquinas marcadas: *Instalada*)
+  - Instalação → conclui a etapa *Instalação* (máquinas marcadas: *Instalada*)
   - Teste → *Homologação / testes* (validação: *Testes de bancada*)
-  - Treinamento → *Entrega e treinamento* (máquinas marcadas: *Entregue / treinada*)
+  - Treinamento → conclui *Entrega e treinamento* (máquinas marcadas: *Entregue / treinada*)
   - Visita ou Suporte depois da entrega → *Acompanhamento em campo*
+  - Clicando na etapa atual da jornada dá para concluí-la (ou deixá-la pendente) e seguir para a próxima.
   A jornada só anda para frente; para desfazer, clique na etapa anterior e em "Voltar o projeto para esta etapa".
 - **Painel inicial** em cartões, com imagem de capa, etapa da jornada e próximo passo de cada projeto, ou em colunas **por etapa**.
 - **Agenda**: o próximo passo de cada projeto, separado em atrasados, hoje, próximos 7 dias e mais adiante, além dos projetos sem próximo passo.

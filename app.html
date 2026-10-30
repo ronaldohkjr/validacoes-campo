@@ -1061,9 +1061,13 @@ details.fold[open] > summary { margin-bottom: 10px; }
   }
 
   /* ---------- Automation: activities move the journey and machine status forward ---------- */
-  // activity type -> journey stage it implies (only ever moves forward)
+  // activity type -> journey stage it completes (the journey moves to the stage after it)
+  const AUTO_DONE = {
+    homologacao: { instalacao: "instalacao", treinamento: "entrega" },
+  };
+  // activity type -> journey stage it puts in progress (only ever moves forward)
   const AUTO_STAGE = {
-    homologacao: { instalacao: "instalacao", teste: "testes", treinamento: "entrega" },
+    homologacao: { teste: "testes" },
     validacao: { teste: "bancada" },
   };
   // activity type -> machine status change, for the machines marked in the activity
@@ -1085,11 +1089,17 @@ details.fold[open] > summary { margin-bottom: 10px; }
     const msgs = []; const fields = new Set();
     // freeze machine statuses before the journey moves (older projects derive them from the stage)
     if ((act.maquinas || []).length) ensureMachines(p);
-    const target = act.tipo && (AUTO_STAGE[p.tipo] || {})[act.tipo];
-    let lbl = target ? advanceTo(p, target) : null;
-    if (!lbl && p.tipo === "homologacao" && (act.tipo === "visita" || act.tipo === "suporte") && stageKey(p) === "entrega") lbl = advanceTo(p, "acomp_campo");
-    if (!lbl && p.tipo === "homologacao" && act.next && act.next.tipo === "visita" && stageKey(p) === "contato") lbl = advanceTo(p, "agendado");
-    if (lbl) { msgs.push(`jornada em “${lbl}”`); ["etapa", "etapasHist", "etapasPend", "diario"].forEach((f) => fields.add(f)); }
+    let lbl = null;
+    const doneK = act.tipo && (AUTO_DONE[p.tipo] || {})[act.tipo];
+    if (doneK) {
+      const st = stages(p); const di = st.findIndex((x) => x.k === doneK);
+      if (di >= 0 && di + 1 < st.length && advanceTo(p, st[di + 1].k)) { lbl = st[di].l; msgs.push(`etapa “${st[di].l}” concluída`); }
+    }
+    const target = !lbl && act.tipo && (AUTO_STAGE[p.tipo] || {})[act.tipo];
+    if (target) { lbl = advanceTo(p, target); if (lbl) msgs.push(`jornada em “${lbl}”`); }
+    if (!lbl && p.tipo === "homologacao" && (act.tipo === "visita" || act.tipo === "suporte") && stageKey(p) === "entrega") { lbl = advanceTo(p, "acomp_campo"); if (lbl) msgs.push(`jornada em “${lbl}”`); }
+    if (!lbl && p.tipo === "homologacao" && act.next && act.next.tipo === "visita" && stageKey(p) === "contato") { lbl = advanceTo(p, "agendado"); if (lbl) msgs.push(`jornada em “${lbl}”`); }
+    if (lbl) ["etapa", "etapasHist", "etapasPend", "diario"].forEach((f) => fields.add(f));
     const rule = p.tipo === "homologacao" && act.tipo ? AUTO_MACH[act.tipo] : null;
     if (rule && (act.maquinas || []).length) {
       ensureMachines(p).forEach((m, i) => {
@@ -1532,12 +1542,20 @@ details.fold[open] > summary { margin-bottom: 10px; }
       const isPend = i < si && pendSet.has(s.k);
       const cls = isPend ? "pend" : i < si ? "done" : i === si ? "cur" : "";
       const sub = isPend ? `<span class="pl">Pendente</span>` : since && i <= si ? `<span class="sd">${fmtDate(since)}</span>` : "";
-      return `<li class="vstep ${cls}"><button data-action="stage" data-v="${s.k}" ${i === si ? 'aria-current="step"' : ""} title="${i === si ? "Etapa atual" : "Abrir opções desta etapa"}">
+      return `<li class="vstep ${cls}"><button data-action="stage" data-v="${s.k}" ${i === si ? 'aria-current="step"' : ""} title="${i === si ? "Concluir esta etapa" : "Abrir opções desta etapa"}">
         <span class="rail"><span class="dotn"></span><span class="ln"></span></span><span class="lb">${esc(s.l)}</span>${sub}</button></li>`;
     }).join("");
     const pendNow = pendingStages(p);
     let panel = "";
-    if (state.stagePanel && state.stagePanel !== stageKey(p)) {
+    if (state.stagePanel && state.stagePanel === stageKey(p)) {
+      const st = stages(p); const nx = st[si + 1];
+      panel = `<div class="stage-panel"><div class="sp-q"><b>${esc(st[si].l)}</b> — etapa atual</div>
+        ${nx ? `<div class="sp-acts" style="justify-content:flex-start">
+          <button class="btn sm primary" data-action="sp-advance" data-v="${nx.k}">Concluir etapa</button>
+          <button class="btn sm" data-action="sp-advance" data-v="${nx.k}" data-pendk="${st[si].k}">Deixar pendente e seguir</button>
+          <button class="btn sm ghost" data-action="sp-cancel">Fechar</button></div>
+          <p class="hint">O projeto passa para “${esc(nx.l)}”.</p>` : `<p class="hint">Esta é a última etapa.</p><div class="sp-acts"><button class="btn sm ghost" data-action="sp-cancel">Fechar</button></div>`}</div>`;
+    } else if (state.stagePanel && state.stagePanel !== stageKey(p)) {
       const st = stages(p); const ti = st.findIndex((s) => s.k === state.stagePanel);
       if (ti > si) {
         const rows = st.slice(si, ti).map((s) => {
@@ -1563,7 +1581,7 @@ details.fold[open] > summary { margin-bottom: 10px; }
       <ol class="vsteps">${steps}</ol>
       ${pendNow.length ? `<div class="pend-list"><b>Pendente:</b>${pendNow.map((s) => `<span>${esc(s.l)}</span><button class="btn sm" data-action="stage-done" data-v="${s.k}">Concluir</button>`).join("")}</div>` : ""}
       ${panel}
-      <p class="hint">Clique numa etapa para avançar ou marcar como pendente.</p>
+      <p class="hint">Clique numa etapa para concluir, avançar ou marcar como pendente.</p>
     </details>`;
   }
 
@@ -2004,7 +2022,6 @@ details.fold[open] > summary { margin-bottom: 10px; }
       return;
     }
     if (a === "stage") {
-      if (b.dataset.v === stageKey(p)) { state.stagePanel = null; renderDetail(); return; }
       state.stagePanel = state.stagePanel === b.dataset.v ? null : b.dataset.v; renderDetail(); return;
     }
     if (a === "sp-mark") { b.parentElement.querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", String(x === b))); return; }
@@ -2012,6 +2029,7 @@ details.fold[open] > summary { margin-bottom: 10px; }
     if (a === "sp-advance") {
       const marks = {};
       document.querySelectorAll(".stage-panel .sp-row").forEach((r) => { const on = r.querySelector('[aria-pressed="true"]'); marks[r.dataset.k] = on ? on.dataset.v : "ok"; });
+      if (b.dataset.pendk) marks[b.dataset.pendk] = "pend";
       setStage(id, b.dataset.v, marks);
       return;
     }
